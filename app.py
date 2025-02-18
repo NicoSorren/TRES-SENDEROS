@@ -1,40 +1,25 @@
-
 import streamlit as st
-import json
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-import pandas as pd
+from sheet_connector import SheetConnector
+from product_editor import ProductEditor
 
-st.title("Conexión a Google Sheets con Streamlit Secrets")
+st.title("Gestión de Productos - Streamlit App")
 
+# Define la URL del Spreadsheet 
+SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1i4kafAJQvVkKbkVIo5LldsN7R-ApeWhHDKZjBvsguoo/edit?gid=0#gid=0"
 
-scope = [
-    "https://spreadsheets.google.com/feeds",
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive.file"
-]
+# Conectar a Google Sheets y obtener datos
+connector = SheetConnector(SPREADSHEET_URL)
+df = connector.get_data()
 
-# Leemos el bloque JSON desde st.secrets
-raw_json = st.secrets["gcp_service_account"]["json"]
-service_account_info = json.loads(raw_json)
-
-creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
-client = gspread.authorize(creds)
-
-# A partir de aquí, ya puedes usar 'client' para abrir tu spreadsheet
-
-
-# URL de tu Spreadsheet (reemplaza con la URL real)
-spreadsheet_url = "https://docs.google.com/spreadsheets/d/1i4kafAJQvVkKbkVIo5LldsN7R-ApeWhHDKZjBvsguoo/edit?gid=0#gid=0"
-spreadsheet = client.open_by_url(spreadsheet_url)
-
-# Selecciona la primera hoja o una específica
-sheet = spreadsheet.sheet1
-
-# Obtén los registros de la hoja
-records = sheet.get_all_records()
-
-# Convierte los datos a un DataFrame y muéstralo
-df = pd.DataFrame(records)
-st.write("Datos del Spreadsheet:")
+st.write("### Datos Cargados desde Google Sheets")
 st.dataframe(df)
+
+# Crear instancia de ProductEditor para editar los datos
+editor = ProductEditor(df)
+filtered_df = editor.filter_by_category()
+editor.edit_products(filtered_df)
+editor.show_data()
+
+if st.button("Generar CSV"):
+    # Aquí, en un siguiente paso, integraríamos la lógica de generación del CSV
+    st.success("CSV generado (esta funcionalidad se implementará en pasos posteriores).")
