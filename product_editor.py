@@ -24,7 +24,7 @@ class ProductEditor:
                     with col1:
                         # Usamos la función parse_price para convertir a número; en este ejemplo usamos float() asumiendo que ya están limpios
                         try:
-                            precio_inicial = float(row["PRECIO VENTA"])
+                            precio_inicial = (row["PRECIO VENTA"])
                         except:
                             precio_inicial = 0.0
                         new_price = st.number_input(
