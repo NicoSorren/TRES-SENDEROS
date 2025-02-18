@@ -1,28 +1,32 @@
+
 import streamlit as st
+import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
 
 st.title("Conexión a Google Sheets con Streamlit Secrets")
 
-# Configura el alcance (scope) requerido
+
 scope = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive.file"
 ]
 
-# Accede a las credenciales desde st.secrets
-service_account_info = st.secrets["gcp_service_account"]
+# Leemos el bloque JSON desde st.secrets
+raw_json = st.secrets["gcp_service_account"]["json"]
+service_account_info = json.loads(raw_json)
 
-# Crea las credenciales a partir del contenido JSON en secrets
+# Creamos las credenciales
 creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
-
-# Autorización con gspread
 client = gspread.authorize(creds)
 
+# A partir de aquí, ya puedes usar 'client' para abrir tu spreadsheet
+
+
 # URL de tu Spreadsheet (reemplaza con la URL real)
-spreadsheet_url = "https://docs.google.com/spreadsheets/d/1i4kafAJQvVkKbkVIo5LldsN7R-ApeWhHDKZjBvsguoo/edit?usp=sharing"
+spreadsheet_url = "https://docs.google.com/spreadsheets/d/1i4kafAJQvVkKbkVIo5LldsN7R-ApeWhHDKZjBvsguoo/edit?gid=0#gid=0"
 spreadsheet = client.open_by_url(spreadsheet_url)
 
 # Selecciona la primera hoja o una específica
