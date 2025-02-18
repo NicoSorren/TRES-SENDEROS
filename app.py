@@ -18,7 +18,6 @@ scope = [
 raw_json = st.secrets["gcp_service_account"]["json"]
 service_account_info = json.loads(raw_json)
 
-# Creamos las credenciales
 creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
 client = gspread.authorize(creds)
 
