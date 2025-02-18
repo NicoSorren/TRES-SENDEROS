@@ -26,7 +26,7 @@ class ProductEditor:
                         try:
                             precio_inicial = float(row["PRECIO VENTA"])
                         except:
-                            precio_inicial = 0.0
+                            precio_inicial = 5.0
                         new_price = st.number_input(
                             f"Precio Venta para {row['PRODUCTO']}",
                             value=precio_inicial,
