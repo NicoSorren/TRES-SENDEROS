@@ -1,3 +1,4 @@
+# sheet_connector.py
 import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -15,7 +16,6 @@ class SheetConnector:
         self.client = self.authenticate()
 
     def authenticate(self):
-        # Lee el bloque JSON de credenciales desde st.secrets
         raw_json = st.secrets["gcp_service_account"]["json"]
         service_account_info = json.loads(raw_json)
         creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, self.scope)
