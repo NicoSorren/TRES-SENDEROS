@@ -5,18 +5,21 @@ from oauth2client.service_account import ServiceAccountCredentials
 import streamlit as st
 import pandas as pd
 
-def parse_price(value):
-        # Convertir a cadena por seguridad
-        value_str = str(value).strip()
-        # Eliminar símbolo $
-        value_str = value_str.replace('$', '')
-        # Eliminar separador de miles (.)
-        value_str = value_str.replace('.', '')
-        # Si tuvieras comas decimales (ej. 7,40) -> value_str = value_str.replace(',', '.')
-        try:
-            return float(value_str)
-        except ValueError:
-            return 0.0
+def parse_price(price_str):
+    # Asegurarte de que es string
+    price_str = str(price_str).strip()
+    # Eliminar símbolo de dólar
+    price_str = price_str.replace('$', '')
+    # Si tu hoja usa punto como separador de miles y coma como decimal:
+    #  "20.200" => "20200"  y  "20,20" => "20.20"
+    # Ajusta según tu caso:
+    price_str = price_str.replace('.', '')  # Quita separador de miles
+    # Convertir a float
+    try:
+        return float(price_str)
+    except ValueError:
+        return 0.0
+
 
 class SheetConnector:
     def __init__(self, spreadsheet_url):
@@ -34,8 +37,6 @@ class SheetConnector:
         creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, self.scope)
         client = gspread.authorize(creds)
         return client
-    
-
 
     def get_data(self):
         spreadsheet = self.client.open_by_url(self.spreadsheet_url)
