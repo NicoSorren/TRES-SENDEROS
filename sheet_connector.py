@@ -6,20 +6,15 @@ import streamlit as st
 import pandas as pd
 
 def parse_price(price_str):
-    # Asegurarte de que es string
     price_str = str(price_str).strip()
-    # Eliminar símbolo de dólar
     price_str = price_str.replace('$', '')
-    # Si tu hoja usa punto como separador de miles y coma como decimal:
-    #  "20.200" => "20200"  y  "20,20" => "20.20"
-    # Ajusta según tu caso:
     price_str = price_str.replace('.', '')  # Quita separador de miles
-    # Convertir a float
+    # Si usas coma como decimal, descomenta la siguiente línea:
+    # price_str = price_str.replace(',', '.')
     try:
         return float(price_str)
     except ValueError:
         return 0.0
-
 
 class SheetConnector:
     def __init__(self, spreadsheet_url):
@@ -44,7 +39,25 @@ class SheetConnector:
         records = sheet.get_all_records()
         df = pd.DataFrame(records)
 
-        # Convertir la columna "PRECIO VENTA" usando parse_price
+        # Convertir "PRECIO VENTA" a float usando parse_price
         df["PRECIO VENTA"] = df["PRECIO VENTA"].apply(parse_price)
+        # Convertir "STOCK" a string para asegurar compatibilidad
+        df["STOCK"] = df["STOCK"].astype(str).str.strip()
 
         return df
+
+
+    def update_data(self, df):
+        """
+        Actualiza la hoja de cálculo con los datos del DataFrame.
+        Se asume que la primera fila de la hoja contiene los encabezados.
+        """
+        spreadsheet = self.client.open_by_url(self.spreadsheet_url)
+        sheet = spreadsheet.sheet1
+        # Limpiar el DataFrame: reemplazar NaN por cadena vacía
+        df_clean = df.copy()
+        df_clean = df_clean.where(pd.notnull(df_clean), "")
+        # Convertir el DataFrame a lista de listas (incluyendo encabezados)
+        data = [df_clean.columns.tolist()] + df_clean.values.tolist()
+        # Actualizar la hoja, a partir de la celda A1
+        sheet.update('A1', data)
