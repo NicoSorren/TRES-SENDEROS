@@ -1,16 +1,18 @@
-# sheet_connector.py
 import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import streamlit as st
 import pandas as pd
 
+@st.cache_data(show_spinner=False)
+def get_data_from_sheet(spreadsheet_url):
+    connector = SheetConnector(spreadsheet_url)
+    return connector.get_data()
+
 def parse_price(price_str):
     price_str = str(price_str).strip()
     price_str = price_str.replace('$', '')
-    price_str = price_str.replace('.', '')  # Quita separador de miles
-    # Si usas coma como decimal, descomenta la siguiente línea:
-    # price_str = price_str.replace(',', '.')
+    price_str = price_str.replace('.', '')
     try:
         return float(price_str)
     except ValueError:
@@ -38,14 +40,9 @@ class SheetConnector:
         sheet = spreadsheet.sheet1
         records = sheet.get_all_records()
         df = pd.DataFrame(records)
-
-        # Convertir "PRECIO VENTA" a float usando parse_price
         df["PRECIO VENTA"] = df["PRECIO VENTA"].apply(parse_price)
-        # Convertir "STOCK" a string para asegurar compatibilidad
         df["STOCK"] = df["STOCK"].astype(str).str.strip()
-
         return df
-
 
     def update_data(self, df):
         """
