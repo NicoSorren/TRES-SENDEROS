@@ -86,18 +86,23 @@ class ProductManager:
         if self.df.empty:
             st.info("No hay productos para eliminar.")
             return
-        
+
+        # 1) Seleccionamos la categoría FUERA del formulario
+        categorias = self.df["CATEGORIA"].astype(str).str.strip().unique().tolist()
+        categoria_seleccionada = st.selectbox("Selecciona la categoría", options=categorias)
+
+        # Filtramos los productos de esa categoría
+        df_cat = self.df[self.df["CATEGORIA"].astype(str).str.strip() == categoria_seleccionada]
+        if df_cat.empty:
+            st.warning("No hay productos en la categoría seleccionada.")
+            return
+
+        # 2) Ahora sí, un formulario para eliminar productos
         with st.form(key="delete_product_form"):
-            categorias = self.df["CATEGORIA"].astype(str).str.strip().unique().tolist()
-            categoria_seleccionada = st.selectbox("Selecciona la categoría", options=categorias)
-            
-            df_cat = self.df[self.df["CATEGORIA"].astype(str).str.strip() == categoria_seleccionada]
-            if df_cat.empty:
-                st.warning("No hay productos en la categoría seleccionada.")
-            else:
-                opciones = df_cat.apply(lambda row: f"{row.name} - {row['PRODUCTO']}", axis=1).tolist()
-                productos_a_eliminar = st.multiselect("Selecciona los productos a eliminar", options=opciones)
-            
+            # Construimos la lista de opciones con "índice - producto"
+            opciones = df_cat.apply(lambda row: f"{row.name} - {row['PRODUCTO']}", axis=1).tolist()
+            productos_a_eliminar = st.multiselect("Selecciona los productos a eliminar", options=opciones)
+
             submitted = st.form_submit_button("Eliminar Productos Seleccionados")
             if submitted:
                 if not productos_a_eliminar:
