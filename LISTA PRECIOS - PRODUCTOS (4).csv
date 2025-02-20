@@ -1,0 +1,396 @@
+SKU,PRODUCTO,CATEGORIA,PRECIO VENTA,KG / UNIDAD,MARCA,STOCK,COSTO,FRACCIONAMIENTO
+,Almendra Guara,FRUTOS SECOS / FRUTAS DESECADAS,19200,KG,,-,,"100g, 250g, 500g"
+,Almendra pelada Non Pareil,FRUTOS SECOS / FRUTAS DESECADAS,20200,KG ,,-,,"100g, 250g, 500g"
+,Ananá en Cubos de Tailandia,FRUTOS SECOS / FRUTAS DESECADAS,17800,KG ,,-,,"100g, 250g, 500g"
+,Arándanos rojos deshidratados,FRUTOS SECOS / FRUTAS DESECADAS,15000,KG ,,-,,"100g, 250g, 500g"
+,Avellanas repeladas grandes,FRUTOS SECOS / FRUTAS DESECADAS,27800,KG ,,-,,"100g, 250g, 500g"
+,Castañas de Cajú W4 Natural sin sal,FRUTOS SECOS / FRUTAS DESECADAS,15600,KG ,,-,,"100g, 250g, 500g"
+,Chips de bananas en rodajas,FRUTOS SECOS / FRUTAS DESECADAS,10520,KG ,,-,,"100g, 250g, 500g"
+,Ciruelas D'Agen S/ Carozo,FRUTOS SECOS / FRUTAS DESECADAS,5670,KG ,,-,,"100g, 250g, 500g"
+,Damasco S/ Carozo mediano,FRUTOS SECOS / FRUTAS DESECADAS,7500,KG ,,-,,"100g, 250g, 500g"
+,Dátiles de Egipto C/ Carozo,FRUTOS SECOS / FRUTAS DESECADAS,9240,KG ,,-,,"100g, 250g, 500g"
+,Garrapiñada de Maní,FRUTOS SECOS / FRUTAS DESECADAS,5300,KG ,,-,,"100g, 250g, 500g"
+,Higos negros tiernizados,FRUTOS SECOS / FRUTAS DESECADAS,7500,KG ,,-,,"100g, 250g, 500g"
+,Jengibre glaseado en cubo o lonjitas,FRUTOS SECOS / FRUTAS DESECADAS,19400,KG ,,-,,"100g, 250g, 500g"
+,Maiz frito sabor tradicional,FRUTOS SECOS / FRUTAS DESECADAS,12180,KG ,,-,,"100g, 250g, 500g"
+,Maní  japonés PREMIUM,FRUTOS SECOS / FRUTAS DESECADAS,5300,KG ,,-,,"100g, 250g, 500g"
+,Maní con cáscara,FRUTOS SECOS / FRUTAS DESECADAS,5300,KG ,,-,,"100g, 250g, 500g"
+,Maní repelado con sal PREMIUM,FRUTOS SECOS / FRUTAS DESECADAS,4600,KG ,,-,,"100g, 250g, 500g"
+,Maní repelado sin sal PREMIUM,FRUTOS SECOS / FRUTAS DESECADAS,4600,KG ,,-,,"100g, 250g, 500g"
+,Medallón de Durazno,FRUTOS SECOS / FRUTAS DESECADAS,9860,KG ,,-,,"100g, 250g, 500g"
+,Naranja en gajos glaseada Sin stock,FRUTOS SECOS / FRUTAS DESECADAS,0,KG ,,0,,"100g, 250g, 500g"
+,Nuez con Cáscara Chandler Extra Light,FRUTOS SECOS / FRUTAS DESECADAS,10560,KG ,,-,,"100g, 250g, 500g"
+,Nuez pelada Mariposa Chandler Extra Light,FRUTOS SECOS / FRUTAS DESECADAS,25600,KG ,,-,,"100g, 250g, 500g"
+,Papaya en cubos,FRUTOS SECOS / FRUTAS DESECADAS,18000,KG ,,-,,"100g, 250g, 500g"
+,Pasas Rojas Jumbo  sin semillas,FRUTOS SECOS / FRUTAS DESECADAS,9440,KG ,,-,,"100g, 250g, 500g"
+,Pasas de Uva Jumbo sin semillas SIN STOCK,FRUTOS SECOS / FRUTAS DESECADAS,7340,KG ,,-,,"100g, 250g, 500g"
+,Pasas de Uva Morenas Flame sin semillas,FRUTOS SECOS / FRUTAS DESECADAS,5040,KG ,,-,,"100g, 250g, 500g"
+,Pasas de Uva Rubias Premium,FRUTOS SECOS / FRUTAS DESECADAS,10000,KG ,,-,,"100g, 250g, 500g"
+,Peras en mitades desecadas,FRUTOS SECOS / FRUTAS DESECADAS,12600,KG ,,-,,"100g, 250g, 500g"
+,Pistachos con cáscara tostados y salados,FRUTOS SECOS / FRUTAS DESECADAS,35600,KG ,,-,,"100g, 250g, 500g"
+,Tomates deshidratados,FRUTOS SECOS / FRUTAS DESECADAS,16560,KG ,,-,,"100g, 250g, 500g"
+,Con pulpa de Ananá parcialmente descremado,YOGURT,0,UNIDAD,,0,0,
+,Con pulpa de Durazno,YOGURT,3800,UNIDAD,,-,0,
+,Con pulpa de Frutilla parcialmente descremado con azúcar,YOGURT,3800,UNIDAD,,0,0,
+,Natural descremado sin azúcar,YOGURT,3800,UNIDAD,,-,0,
+,Natural entero Tipo Griego con azúcar,YOGURT,3800,UNIDAD,,-,0,
+,Alfajor Integral de Dulce de Leche Sin Azúcar,ALFAJORES SIN TACC S/TACC x 50 grs  / ALFAJORES INTEGRALES,0,UNIDAD,Murke,0,,
+,Alfajor Integral de Dulce de Leche Sin Azúcar Bañado en Chocolate,ALFAJORES SIN TACC S/TACC x 50 grs  / ALFAJORES INTEGRALES,0,UNIDAD,Murke,0,,
+,Alfajor de Dulce de Leche Sin Azúcar,ALFAJORES SIN TACC S/TACC x 50 grs  / ALFAJORES INTEGRALES,0,UNIDAD,CERRO AZUL,0,,
+,Alfajor de Mousse Chocolate 100 %  Sin azúcar,ALFAJORES SIN TACC S/TACC x 50 grs  / ALFAJORES INTEGRALES,0,UNIDAD,CERRO AZUL,0,,
+,Alfajor de Mousse Chocolate 100 % vegano  / Sin azúcar,ALFAJORES SIN TACC S/TACC x 50 grs  / ALFAJORES INTEGRALES,0,UNIDAD,CERRO AZUL,0,,
+,Alfajor de Mousse Fresas 100 % Vegano / Sin azúcar,ALFAJORES SIN TACC S/TACC x 50 grs  / ALFAJORES INTEGRALES,0,UNIDAD,CERRO AZUL,0,,
+,Alfajor de Mousse Limón 100 % Vegano / Sin azúcar,ALFAJORES SIN TACC S/TACC x 50 grs  / ALFAJORES INTEGRALES,0,UNIDAD,CERRO AZUL,0,,
+,Alfajor de Mousse Vainilla 100 % Vegano / Sin azúcar,ALFAJORES SIN TACC S/TACC x 50 grs  / ALFAJORES INTEGRALES,0,UNIDAD,CERRO AZUL,0,,
+,Galletas Light Algarroba  x  180 grs S/ Azúcar,GALLETAS SALUDABLES SIN AZÚCAR / COOKIES SALUDABLES,1935,UNIDAD,,-,,
+,Galletas Light Chía/ Sésamo/ Lino  x 190 grs S/Azúcar,GALLETAS SALUDABLES SIN AZÚCAR / COOKIES SALUDABLES,1935,UNIDAD,,-,,
+,Galletas Light Coco  x 180 grs S/ Azúcar,GALLETAS SALUDABLES SIN AZÚCAR / COOKIES SALUDABLES,1935,UNIDAD,,-,,
+,Galletas Light Frutos Rojos con Arándonos x 170 grs S/Azúcar,GALLETAS SALUDABLES SIN AZÚCAR / COOKIES SALUDABLES,1942,UNIDAD,,-,,
+,Galletas Light Limón x 180 grs S/ Azúcar,GALLETAS SALUDABLES SIN AZÚCAR / COOKIES SALUDABLES,1935,UNIDAD,,-,,
+,Galletas Light Naranja x 180 grs S/Azúcar,GALLETAS SALUDABLES SIN AZÚCAR / COOKIES SALUDABLES,1935,UNIDAD,,-,,
+,Galletas Light Vainilla  x 180 grs S/ Azúcar,GALLETAS SALUDABLES SIN AZÚCAR / COOKIES SALUDABLES,1935,UNIDAD,,-,,
+,Galletas Light c/Pasas x 175 grs S/Azúcar,GALLETAS SALUDABLES SIN AZÚCAR / COOKIES SALUDABLES,1935,UNIDAD,,-,,
+,Barritas de arroz x 20 grs ( Tradicional / Miel / Chocolate ),TOSTADAS  / DISCOS DE ARROZ / BARRAS  S/TACC,600,UNIDAD,,-,,
+,Discos de arroz x 60 grs ( Tradicional / Miel / Chocolate ),TOSTADAS  / DISCOS DE ARROZ / BARRAS  S/TACC,1485,UNIDAD,,-,,
+,Tostaditas de arroz x 120 grs,TOSTADAS  / DISCOS DE ARROZ / BARRAS  S/TACC,1780,UNIDAD,,-,,
+,MIX 1 sin maní (Nueces/ Almendras / Pasas Morenas/ Rubias),MIX DE FRUTOS SECOS | FRUTAS DESECADAS| CEREALES,16732,KG,,-,,"250g, 500g"
+,MIX 2 (Nueces/ Almendras / Pasas Morenas/Rubias /Maní sin sal ),MIX DE FRUTOS SECOS | FRUTAS DESECADAS| CEREALES,14396,KG,,-,,"250g, 500g"
+,MIX ARAUCANO(Nueces/Almendras/ Castañas de Cajú /Maní s/sal /Banana Chips),MIX DE FRUTOS SECOS | FRUTAS DESECADAS| CEREALES,14912,KG,,-,,"250g, 500g"
+,MIX PATAGÓNICO(Arándanos/Pasas Negras /Rubias/Coco en escamas/Nueces/Castañas/Almendras),MIX DE FRUTOS SECOS | FRUTAS DESECADAS| CEREALES,16460,KG,,-,,"250g, 500g"
+,"MIX POWER UP ( Almendras, Nueces ,Chips de Banana ,Pasas negras , Maní s/sal y Girasol )",MIX DE FRUTOS SECOS | FRUTAS DESECADAS| CEREALES,12728,KG,,-,,"250g, 500g"
+,"MIX POWER UP + GOTITAS DE CHOCOLATE NEGRO ( Almendras, Nueces ,Chips de Banana ,Pasas negras , Maní s/sal y Girasol + chips de choco negro )",MIX DE FRUTOS SECOS | FRUTAS DESECADAS| CEREALES,13926,KG,,-,,"250g, 500g"
+,MIX PREMIUM (Nueces/ Almendras / Pasas Morenas/Rubias /Castañas / Avellanas),MIX DE FRUTOS SECOS | FRUTAS DESECADAS| CEREALES,19110,KG,,-,,"250g, 500g"
+,MIX SUPER PREMIUM (Nueces / Almendras /Castañas / Avellanas),MIX DE FRUTOS SECOS | FRUTAS DESECADAS| CEREALES,24530,KG,,-,,"250g, 500g"
+,MIX TROPICAL ECONOMICO ( Nueces/ Almendras/ Ananá Glaseado/ Chips de bananas/ Maní sin sal /Pasas Morenas /Rubias/ Papaya),MIX DE FRUTOS SECOS | FRUTAS DESECADAS| CEREALES,16840,KG,,-,,"250g, 500g"
+,MIX TROPICAL PREMIUM (Nueces/Almendras/ Ananá Glaseado/Chips de bananas/Castañas/Pasas Morenas /Pasas Rubias /Papaya),MIX DE FRUTOS SECOS | FRUTAS DESECADAS| CEREALES,16880,KG,,-,,"250g, 500g"
+,Mix CERVECERO Tradicional (Maiz Frito Común / Pasas Rubias /Maní salado/Girasol),MIX DE FRUTOS SECOS | FRUTAS DESECADAS| CEREALES,8316,KG,,-,,"250g, 500g"
+,Arándanos Congelados,MIX DE FRUTOS CONGELADOS,10800,KG,,-,,"500g, 1kg"
+,Frambuesas,MIX DE FRUTOS CONGELADOS,15000,KG,,-,,"500g, 1kg"
+,Frutillas Congeladas Orgánicas,MIX DE FRUTOS CONGELADOS,9500,KG,,-,,"500g, 1kg"
+,MIX 1 de Frutos Rojos Congelados con Frutilla,MIX DE FRUTOS CONGELADOS,10600,KG,,-,,"500g, 1kg"
+,MIX 2 de Frutos Rojos Congelados sin Frutilla,MIX DE FRUTOS CONGELADOS,12300,KG,,-,,"500g, 1kg"
+,Mango,MIX DE FRUTOS CONGELADOS,10000,KG,,-,,"500g, 1kg"
+,Maracuyá en pulpa sin semilla ( No se puede fraccionar por 500 grs),MIX DE FRUTOS CONGELADOS,12300,KG,,-,,"500g, 1kg"
+,Piña en Trozos,MIX DE FRUTOS CONGELADOS,12000,KG,,-,,"500g, 1kg"
+,Milanesa de Soja Simple (7 unidades ) Porotos de Soja / Harina de Trigo/ Orégano / Provenzal -Pan Rallado,MILANESAS DE SOJA CONGELADAS,3500,UNIDAD,MENDOSOJA,-,,
+,"Milanesa de Soja Rellena  (6 unidades )  Porotos de Soja / Harina de Trigo/ Orégano / Provenzal -Pan Rallado Rellenas de ESPINACA , CEBOLLA ,QUESO Y RICOTA",MILANESAS DE SOJA CONGELADAS (MARCA MENDOSOJA),6300,UNIDAD,MENDOSOJA,-,,
+,Milanesa de Soja Rellena  (6 unidades )  Porotos de Soja / Harina de Trigo/ Orégano / Provenzal -Pan Rallado Rellenas de JAMON Y QUESO,MILANESAS DE SOJA CONGELADAS (MARCA MENDOSOJA),6300,UNIDAD,MENDOSOJA,-,,
+,Milanesa de Soja Rellena  (6 unidades )  Porotos de Soja / Harina de Trigo/ Orégano / Provenzal -Pan Rallado Rellenas de QUESO,MILANESAS DE SOJA CONGELADAS (MARCA MENDOSOJA),6300,UNIDAD,MENDOSOJA,-,,
+,Milanesa de Soja Rellena  (6 unidades )  Porotos de Soja / Harina de Trigo/ Orégano / Provenzal -Pan Rallado Rellenas de RICOTA Y NUEZ,MILANESAS DE SOJA CONGELADAS (MARCA MENDOSOJA),6300,UNIDAD,MENDOSOJA,-,,
+,"Milanesa de Soja Rellena  (6 unidades )  Porotos de Soja / Harina de Trigo/ Orégano / Provenzal -Pan Rallado Rellenas de TOMATE EN ACEITE , ALBAHACA, QUESO Y RICOTA",MILANESAS DE SOJA CONGELADAS (MARCA MENDOSOJA),6300,UNIDAD,MENDOSOJA,-,,
+,Caja  x 10 sobres x 35 grs Sin Sal,CALDOS DE VERDURA S/TACC / VEGANO (MARCA ARGENDIET),4740,UNIDAD,ARGENDIET,0,,
+,Almohaditas 2 Salvados,CEREALES GRANIX / AVENA / VARIOS,6090,KG,,-,,"250g, 500g, 1kg"
+,Almohaditas de Avena,CEREALES GRANIX / AVENA / VARIOS,6280,KG,,-,,"250g, 500g, 1kg"
+,Almohaditas rellenas con Manzana y Canela,CEREALES GRANIX / AVENA / VARIOS,8100,KG,,-,,"250g, 500g, 1kg"
+,Almohaditas rellenas con crema de Avellana,CEREALES GRANIX / AVENA / VARIOS,8100,KG,,-,,"250g, 500g, 1kg"
+,Almohaditas rellenas con crema de Frutilla,CEREALES GRANIX / AVENA / VARIOS,8100,KG,,-,,"250g, 500g, 1kg"
+,Almohaditas rellenas con crema de Limón,CEREALES GRANIX / AVENA / VARIOS,8100,KG,,-,,"250g, 500g, 1kg"
+,Almohaditas rellenas con crema de Maní,CEREALES GRANIX / AVENA / VARIOS,8100,KG,,-,,"250g, 500g, 1kg"
+,Almohaditas rellenas de chocolate Blanco,CEREALES GRANIX / AVENA / VARIOS,9400,KG,,-,,"250g, 500g, 1kg"
+,Aritos con miel,CEREALES GRANIX / AVENA / VARIOS,5340,KG,,-,,"250g, 500g, 1kg"
+,Aritos frutales,CEREALES GRANIX / AVENA / VARIOS,5800,KG,,-,,"250g, 500g, 1kg"
+,Arroz inflado,CEREALES GRANIX / AVENA / VARIOS,6610,KG,,-,,"250g, 500g, 1kg"
+,Avena Gruesa,CEREALES GRANIX / AVENA / VARIOS,2500,KG,,-,,"250g, 500g, 1kg"
+,Avena Gruesa SIN GLUTEN Certificada pack x 500 grs,CEREALES GRANIX / AVENA / VARIOS,4600,UNIDAD,,-,,
+,Avena Instantánea SIN GLUTEN Certificada pack x 500 grs,CEREALES GRANIX / AVENA / VARIOS,4600,UNIDAD,,-,,
+,Avena instantánea,CEREALES GRANIX / AVENA / VARIOS,2500,KG,,-,,"250g, 500g, 1kg"
+,Avena instantánea Premium ( Granix ) x 400 grs,CEREALES GRANIX / AVENA / VARIOS,2400,UNIDAD,,-,,
+,Avena tradicional,CEREALES GRANIX / AVENA / VARIOS,2500,KG,,-,,"250g, 500g, 1kg"
+,Baloncitos de chocolate,CEREALES GRANIX / AVENA / VARIOS,6500,KG,,-,,"250g, 500g, 1kg"
+,Caja x 10 sobres x 35 grs Con Sal,CEREALES GRANIX / AVENA / VARIOS,2300,UNIDAD,ARGENDIET,0,,
+,Copos de Maíz Azucarados (Skarchitos),CEREALES GRANIX / AVENA / VARIOS,4650,KG,,-,,"250g, 500g, 1kg"
+,Copos de Maíz con miel,CEREALES GRANIX / AVENA / VARIOS,4700,KG,,-,,"250g, 500g, 1kg"
+,Copos de Maíz sin azúcar,CEREALES GRANIX / AVENA / VARIOS,4100,KG,,-,,"250g, 500g, 1kg"
+,Fibra Total 4,CEREALES GRANIX / AVENA / VARIOS,5300,KG,,-,,"250g, 500g, 1kg"
+,Hojuelas de Semillas de POP (Quinoa / Sesamo / Lino/ Chia ),CEREALES GRANIX / AVENA / VARIOS,5650,KG,,-,,"250g, 500g, 1kg"
+,Quinoa POP  Tipo cereal (Harina de quinoa y azúcar organica),CEREALES GRANIX / AVENA / VARIOS,5800,KG,,-,,"250g, 500g, 1kg"
+,"Quinoa POP c/ Algarroba (Harina de quinoa, azúcar organica y harina de algarroba)",CEREALES GRANIX / AVENA / VARIOS,6370,KG,,-,,"250g, 500g, 1kg"
+,"Quinoa POP c/Arándanos (Harina de quinoa, azúcar organica y harina de arándano)",CEREALES GRANIX / AVENA / VARIOS,6370,KG,,-,,"250g, 500g, 1kg"
+,Yamaní POP Orgánico (Cereal inflado a base de arroz integral yamaní),CEREALES GRANIX / AVENA / VARIOS,6580,KG,,-,,"250g, 500g, 1kg"
+,Arveja y Cebolla,MEDALLONES VEGETALES SIN TACC 4 unidades,3600,UNIDAD,Kislév,-,,
+,Garbanzo,MEDALLONES VEGETALES SIN TACC 4 unidades,3600,UNIDAD,Kislév,-,,
+,Humita,MEDALLONES VEGETALES SIN TACC 4 unidades,3600,UNIDAD,Kislév,-,,
+,Humita Brava Ahumada,MEDALLONES VEGETALES SIN TACC 4 unidades,3600,UNIDAD,Kislév,-,,
+,Lenteja y Zanahoria,MEDALLONES VEGETALES SIN TACC 4 unidades,3600,UNIDAD,Kislév,-,,
+,Maíz blanco y Aceituna,MEDALLONES VEGETALES SIN TACC 4 unidades,3600,UNIDAD,Kislév,-,,
+,Soja y Anquito,MEDALLONES VEGETALES SIN TACC 4 unidades,3600,UNIDAD,Kislév,-,,
+,Soja y Orégano,MEDALLONES VEGETALES SIN TACC 4 unidades,3600,UNIDAD,Kislév,-,,
+,Soja y Provenzal,MEDALLONES VEGETALES SIN TACC 4 unidades,3600,UNIDAD,Kislév,-,,
+,Maiz inflado con azúcar S/TACC x 120 grs (Tutuca),VEGGIE SNACKS SALUDABLES / BOCADITOS SALUDABLES /SURTIDO CROCANTE ORANN /BARRITAS CROC / TUTUCAS,1130,UNIDAD,Timón Cruz,-,,
+,Maíz Inflado Diet S/TACC x 80 grs (Tutuca),VEGGIE SNACKS SALUDABLES / BOCADITOS SALUDABLES /SURTIDO CROCANTE ORANN /BARRITAS CROC / TUTUCAS,1130,UNIDAD,Timón Cruz,-,,
+,Veggie sabor Pizza / Cebolla / Finas Hierbas / Barbacoa x 45 grs,VEGGIE SNACKS SALUDABLES / BOCADITOS SALUDABLES /SURTIDO CROCANTE ORANN /BARRITAS CROC / TUTUCAS,860,UNIDAD,Granix,-,,
+,"Granola CLÁSICA Orann (Avena arrollada, coco, canela, pasas de uva, maní )",GRANOLAS,5200,KG,Orann,-,,"250g, 500g, 1kg"
+,"Granola CROCANTE GRANIX (Cereales , coco y miel)",GRANOLAS,7200,KG,GRANIX,-,,"250g, 500g, 1kg"
+,"Granola LIGHT Orann (Avena arrollada,copos de arroz, copos de maiz, copos crispin)",GRANOLAS,4200,KG,Orann,-,,"250g, 500g, 1kg"
+,"Granola NEUTRA Orann s/azúcar  (Avena arrollada, almendras, castañas de cajú, semillas lino y de sésamo, arroz inflado, maní, nueces, endulzante nutritivo natural)",GRANOLAS,7000,KG,Orann,-,,"250g, 500g, 1kg"
+,"Mix ENERGETICO Orann (Avena,maní,copos de arroz,almendras,semillas de girasol, sésamo,lino, pasas de uva, frutas deshidratadas, endulzante nutritivo natural y vainilla)",GRANOLAS,7000,KG,Orann,-,,"250g, 500g, 1kg"
+,"Mix ENERGETICO Orann + Chips de Chocolate (Avena,maní,copos de arroz,almendras, semillas de girasol, sésamo,lino, pasas de uva, frutas deshidratadas, endulzante nutritivo natural y vainilla)",GRANOLAS,7230,KG,Orann,-,,"250g, 500g, 1kg"
+,Stevia Liquida x 100 cc (25 % de regalo ),ENDULZANTE NATURAL,3682,UNIDAD,JUAL,-,,
+,Stevia Líquida x 200 cc (25 % de regalo),ENDULZANTE NATURAL,5530,UNIDAD,JUAL,-,,
+,Stevia en polvo x 90 grs (20 % de regalo),ENDULZANTE NATURAL,5530,UNIDAD,JUAL,-,,
+,8 BLENDS (Contiene la colección de Té Negro / Té Blanco / Té Verde ) Caja x 15 saq,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4000,UNIDAD,INTI ZEN,-,,
+,Anís Estrellado x 100 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,9200,UNIDAD,,-,,
+,Boldo a granel x 100 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,2100,UNIDAD,,-,,
+,Burro a granel en Hojas x 100 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,1490,UNIDAD,,-,,
+,Cedrón a granel x 100 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,1790,UNIDAD,,-,,
+,Hibiscus Flor a granel x 100 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,3090,UNIDAD,,-,,
+,MIX DE TISANAS -HERBAL (Contiene la colección de las 4 tisanas) Caja x 15 saq,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4500,UNIDAD,INTI ZEN,-,,
+,Manzanilla Flor a granel x 100 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,3200,UNIDAD,,-,,
+,Matcha x 50 grs Orgánica Doypack,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,7990,UNIDAD,,-,,
+,Menta a granel x 100 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,1340,UNIDAD,,-,,
+,Peperina a granel x 100 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,2890,UNIDAD,,-,,
+,Poleo en Hojas x 100 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,1230,UNIDAD,,-,,
+,"TE BLANCO - LICHEE (Té blanco, Lychee y Cedrón) Caja x 15 saq",TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4000,UNIDAD,INTI ZEN,-,,
+,"TE NEGRO - CHAMAN CHAI (Té negro de la India con canela,jengibre y cardamomo) Caja x 15 saq",TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4000,UNIDAD,INTI ZEN,-,,
+,"TE NEGRO - GOLDEN CHAI (Té negro de la india con cúrcuma, jengibre y canela ) Caja x 15 saq",TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4000,UNIDAD,INTI ZEN,-,,
+,TE NEGRO - INCA ROSE (Té Ceylon con bergamota y pétalos de rosa) Caja x 15 saq,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4000,UNIDAD,INTI ZEN,-,,
+,"TE NEGRO -ILUMINE (Té negro clásico, mezcla de Ceylan y Assam) Caja x 15 saq",TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4000,UNIDAD,INTI ZEN,-,,
+,"TE VERDE - CHAI (Té verde de Oriente con canela ,jengibre y Cardamomo) Caja x 15 saq",TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4000,UNIDAD,INTI ZEN,-,,
+,"TE VERDE -INTI MATCHA (Té verde de japón ,Matcha yuzu cÍtrico y Limón) Caja x 15 saq",TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4000,UNIDAD,INTI ZEN,-,,
+,TE VERDE- SILENCIO ANDINO (Té verde con Cedrón y cáscara de naranja) Caja x 15 saq,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4000,UNIDAD,INTI ZEN,-,,
+,TISANAS - CALMA ANDINA (infusión de Cedrón con cascaritas de naranja) Caja x 15 saq,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4000,UNIDAD,INTI ZEN,-,,
+,TISANAS - INTI GREY (Té negro de Ceylan ) Caja x 15 saq,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4000,UNIDAD,INTI ZEN,-,,
+,"TISANAS - INTI YOGA (Infusión de Lemongrass, rosa mosqueta y jengibre) Caja x 15 saq",TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4000,UNIDAD,INTI ZEN,-,,
+,TISANAS - PAMPA DULCE (Té con manzana y canela) Caja x 15 saq,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4000,UNIDAD,INTI ZEN,-,,
+,TISANAS - PATAGONIA ROOIBOS ( infusión de Rooibos con frutos rojos ) Caja x 15 saq,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4500,UNIDAD,INTI ZEN,-,,
+,TISANAS - VAINILLA ZEN (Infusión de Rooibos y Vainilla) Caja x 15 saq ,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4500,UNIDAD,INTI ZEN,-,,
+,TISANAS- DULCE MANZANILLA ( Infusión de Manzanilla y Miel) Caja x 15 saq,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4000,UNIDAD,INTI ZEN,-,,
+,Valeriana x 100 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,3100,UNIDAD,,-,,
+,TE NEGRO A GRANEL X 100 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,550,UNIDAD,,-,,
+,TE NEGRO EN HEBRAS ORGANICO- 80 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,3500,UNIDAD,INTI ZEN,-,,
+,TE ROJO A GRANEL X 100 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,550,UNIDAD,,-,,
+,TE VERDE A GRANEL X 100 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,550,UNIDAD,,-,,
+,TE VERDE EN HEBRAS ORGANICO - 80 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,3500,UNIDAD,INTI ZEN,-,,
+,YERBA MATE CON PALOS  agroecologica S/TACC x 500 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,5000,UNIDAD,KALENA,-,,
+,YERBA MATE ORGÁNICA X  500 Grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,4870,UNIDAD,Ka- á,-,,
+,YERBA MATE SIN PALOS agroecologica S/TACC x 500 grs,TES Y TIZANAS / MATCHA / YERBA MATE Agroecologica/ HIERBAS A GRANEL,6000,UNIDAD,KALENA,-,,
+,Amapola Azul de Turquía,SEMILLAS,16800,KG,,-,,"100g, 250g, 500g"
+,Amaranto,SEMILLAS,7760,KG,,-,,"100g, 250g, 500g"
+,Chía de primera,SEMILLAS,5000,KG,,-,,"100g, 250g, 500g"
+,Girasol Pelado,SEMILLAS,3460,KG,,-,,"100g, 250g, 500g"
+,Lino de primera,SEMILLAS,1780,KG,,-,,"100g, 250g, 500g"
+,Mijo Pelado,SEMILLAS,2360,KG,,-,,"100g, 250g, 500g"
+,Mix Semillas (Lino / Girasol / Chia / Sésamo / Amaranto),SEMILLAS,4792,KG,,-,,"100g, 250g, 500g"
+,Quinoa Real Boliviana,SEMILLAS,8820,KG,,-,,"100g, 250g, 500g"
+,Semillas de Fenogreco,SEMILLAS,5860,KG,,-,,"100g, 250g, 500g"
+,Sésamo Blanco (India ),SEMILLAS,9880,KG,,-,,"100g, 250g, 500g"
+,Sésamo Integral Premium,SEMILLAS,4820,KG,,-,,"100g, 250g, 500g"
+,Sésamo Negro de primera,SEMILLAS,9880,KG,,-,,"100g, 250g, 500g"
+,Zapallo pelado ( Primera Calidad ),SEMILLAS,18900,KG,,-,,"100g, 250g, 500g"
+,Cous Cous,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,12240,KG,,-,,"250g, 500g"
+,Fariña  de Mandioca,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,4200,KG,,-,,"250g, 500g"
+,Fécula de Maiz s/ TACC x 450 grs,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,1722,UNIDAD,,-,,
+,Fécula de Mandioca,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,2500,KG,,-,,"250g, 500g"
+,Fécula de Mandioca s/TACC x 450 grs,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,1792,UNIDAD,,-,,
+,Fécula de Trigo,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,2300,KG,,-,,"250g, 500g"
+,Germen de Trigo,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,2700,KG,,-,,"250g, 500g"
+,Harina Integral,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,1460,KG,,-,,"250g, 500g"
+,Harina Integral Orgánica Extra Fina,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,2200,KG,,-,,"250g, 500g"
+,Harina Integral Orgánica Extra Fina Premium x 1 kg,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,7070,KG,,-,,"250g, 500g"
+,Harina de Algarroba Negra ( Tipo Cacao ),HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,11980,KG,,-,,"250g, 500g"
+,Harina de Algarroba blanca,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,6300,KG,,-,,"250g, 500g"
+,Harina de Algarroba s/ TACC x 200 grs,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,3598,UNIDAD,,-,,
+,Harina de Almendra ( con piel ),HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,16160,KG,,-,,"250g, 500g"
+,Harina de Almendra (sin piel),HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,19320,KG,,-,,"250g, 500g"
+,Harina de Arroz,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,2320,KG,,-,,"250g, 500g"
+,Harina de Arroz s / TACC x kg.,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,3654,UNIDAD,,-,,
+,Harina de Arveja,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,1320,KG,,-,,"250g, 500g"
+,Harina de Avena,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,2200,KG,,-,,"250g, 500g"
+,Harina de Centeno,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,2400,KG,,-,,"250g, 500g"
+,Harina de Chia de primera,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,4360,KG,,-,,"250g, 500g"
+,Harina de Coco,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,7560,KG,,-,,"250g, 500g"
+,Harina de Garbanzos,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,1620,KG,,-,,"250g, 500g"
+,Harina de Lino,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,1800,KG,,-,,"250g, 500g"
+,Harina de Maiz para Arepas,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,4400,KG,,-,,"250g, 500g"
+,Harina de Nuez,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,12600,KG,,-,,"250g, 500g"
+,Harina de Quinoa,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,6600,KG,,-,,"250g, 500g"
+,Harina de Soja Desgrasada,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,3320,KG,,-,,"250g, 500g"
+,Harina de Trigo Sarraceno S/TACC x 1 kg,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,13188,KG,,-,,"250g, 500g"
+,Harina de Trigo Sarraceno S/TACC x 500 grs,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,7000,KG,,-,,"250g, 500g"
+,Polenta Rápida Orgánica S/TACC x  450 grs,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,3682,KG,,-,,"250g, 500g"
+,Premezcla Universal con Psyllium x 450 kg,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,4718,KG,,-,,"250g, 500g"
+,Salvado de Avena,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,2500,KG,,-,,"250g, 500g"
+,Salvado de Trigo Grueso,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,1800,KG,,-,,"250g, 500g"
+,Semolín de Trigo,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,2600,KG,,-,,"250g, 500g"
+,Soja Texturizada Gruesa Premium,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,3340,KG,,-,,"250g, 500g"
+,Soja Texturizada Mediano Premium,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,3060,KG,,-,,"250g, 500g"
+,Soja texturizada Vegana x 350 grs,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,1526,UNIDAD,,-,,
+,Trigo Burgol,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,4400,KG,,-,,"250g, 500g"
+,Trigo Candeal Pelado,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,3080,KG,,-,,"250g, 500g"
+,Trigo Sarraceno (Granos) S/TACC x 1 kg,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,6594,UNIDAD,,-,,
+,Trigo Sarraceno (Granos) S/TACC x 500 grs,HARINAS COMUNES Y SIN TACC / PREMEZCLAS Y FECULAS SIN TACC /VARIOS,3500,UNIDAD,,-,,
+,Adobo para pizza,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,13120,KG,,-,,"100g, 250g"
+,Ají molido Fino,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,13520,KG,,-,,"100g, 250g"
+,Ají molido Merken,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,17760,KG,,-,,"100g, 250g"
+,Ají molido Premium,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,16320,KG,,-,,"100g, 250g"
+,Albahaca en hojas,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,11760,KG,,-,,"100g, 250g"
+,Azafrán Español ( cápsula ),ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,4900,UNIDAD,,-,,
+,Baharat,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,28400,KG,,-,,"100g, 250g"
+,Cardamomo,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,85200,KG,,-,,"100g, 250g"
+,Cayena molida,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,16400,KG,,-,,"100g, 250g"
+,Chimichurri,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,13680,KG,,-,,"100g, 250g"
+,Clavo de olor entero,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,52000,KG,,-,,"100g, 250g"
+,Clavo de olor molido,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,51200,KG,,-,,"100g, 250g"
+,Comino molido,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,14000,KG,,-,,"100g, 250g"
+,Coriandro molido,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,3200,KG,,-,,"100g, 250g"
+,Curry powder,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,13600,KG,,-,,"100g, 250g"
+,Cúrcuma molida,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,11000,KG,,-,,"100g, 250g"
+,Especias surtidas ( Próximamente ),ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,13600,KG,,-,,"100g, 250g"
+,Finas hierbas ( Próximamente ),ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,16000,KG,,-,,"100g, 250g"
+,Hongos secos x 25 grs,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,1300,UNIDAD,,-,,
+,Jengibre molido,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,14400,KG,,-,,"100g, 250g"
+,Laurel en hojas,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,16480,KG,,-,,"100g, 250g"
+,Mix  de 4 pimientas ( Próximamente ),ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,35600,KG,,-,,"100g, 250g"
+,Nuez moscada entera x unid.,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,670,UNIDAD,,-,,
+,Nuez moscada molida,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,23200,KG,,-,,"100g, 250g"
+,Orégano,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,10400,KG,,-,,"100g, 250g"
+,Perejil en hojas,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,15120,KG,,-,,"100g, 250g"
+,Pimentón Ahumado,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,14000,KG,,-,,"100g, 250g"
+,Pimentón Común,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,9680,KG,,-,,"100g, 250g"
+,Pimentón Extra,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,12800,KG,,-,,"100g, 250g"
+,Pimentón Picante (Paprika),ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,12400,KG,,-,,"100g, 250g"
+,Pimentón Selección,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,11440,KG,,-,,"100g, 250g"
+,Pimienta blanca en grano,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,45600,KG,,-,,"100g, 250g"
+,Pimienta blanca molida,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,45200,KG,,-,,"100g, 250g"
+,Pimienta negra en grano,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,28800,KG,,-,,"100g, 250g"
+,Pimienta negra molida,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,33600,KG,,-,,"100g, 250g"
+,Provenzal,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,14080,KG,,-,,"100g, 250g"
+,Sal Marina Fina 100 % Natural x 500 grs,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,2680,UNIDAD,,-,,
+,Sal Marina Gruesa 100 % Natural x 500  grs,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,1870,UNIDAD,,-,,
+,Sal Rosada Fina,ESPECIAS /CONDIMENTOS / SAL MARINA / SAL ROSADA,2840,KG,,-,,"100g, 250g"
+,Agar Agar x 100 grs,REPOSTERÍA,7300,UNIDAD,,-,,
+,Almidón de Maíz,REPOSTERÍA,3490,KG,,-,,"250g, 500g, 1kg"
+,Azúcar Impalpable Común,REPOSTERÍA,2400,KG,,-,,"250g, 500g, 1kg"
+,Azúcar Integral Orgánica x  kg S/TACC,REPOSTERÍA,5824,UNIDAD,,-,,
+,Azúcar Negra,REPOSTERÍA,2905,KG,,-,,"250g, 500g, 1kg"
+,Azúcar de Mascabo,REPOSTERÍA,3400,KG,,-,,"250g, 500g, 1kg"
+,Azúcar de Mascabo x 500 grs S/TACC,REPOSTERÍA,2634,UNIDAD,,-,,
+,Azúcar rubia Orgánica,REPOSTERÍA,3460,KG,,-,,"250g, 500g, 1kg"
+,Bicarbonato de Sodio,REPOSTERÍA,4700,KG,,-,,"250g, 500g, 1kg"
+,Bicarbonato de Sodio S/TACC x 200 grs,REPOSTERÍA,2184,UNIDAD,,-,,
+,Cacao en Polvo Amargo,REPOSTERÍA,21000,KG,,-,,"250g, 500g, 1kg"
+,Canela Molida,REPOSTERÍA,13520,KG,,-,,"250g, 500g, 1kg"
+,Canela Molida x 25 grs,REPOSTERÍA,610,UNIDAD,,-,,
+,Canela en Rama x 15 grs,REPOSTERÍA,1840,UNIDAD,,-,,
+,Coco Rallado,REPOSTERÍA,12600,KG,,-,,"250g, 500g, 1kg"
+,Coco en Escamas,REPOSTERÍA,13300,KG,,-,,"250g, 500g, 1kg"
+,Extracto de Vainilla x 100 cc.,REPOSTERÍA,990,UNIDAD,,-,,
+,Extracto de Vainilla x 30 cc.,REPOSTERÍA,615,UNIDAD,,-,,
+,Fruta Escurrida para p / Dulce,REPOSTERÍA,4900,KG,,-,,"250g, 500g, 1kg"
+,Gelatina sin Sabor x 15 grs,REPOSTERÍA,1300,UNIDAD,,-,,
+,Gotitas de Chocolate Blanco,REPOSTERÍA,9100,KG,,-,,"250g, 500g, 1kg"
+,Gotitas de Chocolate Negro Semiamargo,REPOSTERÍA,9600,KG,,-,,"250g, 500g, 1kg"
+,Polvo de Hornear x 50 grs,REPOSTERÍA,580,UNIDAD,,-,,
+,Polvo para Hornear,REPOSTERÍA,5840,KG,,-,,"250g, 500g, 1kg"
+,Polvo para Hornear S/TACC x 250 grs,REPOSTERÍA,2850,UNIDAD,,-,,
+,Polvo para Hornear S/TACC x 250 grs   SIN ALUMINIO,REPOSTERÍA,6300,UNIDAD,,-,,
+,Polvo para Hornear S/TACC x Kg   SIN ALUMINIO,REPOSTERÍA,6840,UNIDAD,,-,,
+,Dulce de  leche con Cacao x 445 grs s/ tacc,DULCE DE LECHE,7900,UNIDAD,REGIDET,-,,
+,Dulce de leche sin azúcar x 445 grs s/tacc,DULCE DE LECHE,7400,UNIDAD,REGIDET,-,,
+,Manteca clarificada x 150 grs,MANTECA CLARIFICADA SIN TACC,4950,UNIDAD,GHEE,-,,
+,Manteca clarificada x 300 grs,MANTECA CLARIFICADA SIN TACC,9420,UNIDAD,GHEE,-,,
+,Pasta de Mani Natural S/TACC (tamaño mediano),PASTA DE MANI | PASTA DE SESAMO,3500,UNIDAD,ENTRE NUTS,-,,
+,Pasta de Maní con Cacao S/TACC (tamaño mediano),PASTA DE MANI | PASTA DE SESAMO,3500,UNIDAD,ENTRE NUTS,-,,
+,Pasta de Maní con Coco S/TACC  ( tamaño  mediano),PASTA DE MANI | PASTA DE SESAMO,3500,UNIDAD,ENTRE NUTS,-,,
+,Pasta de Sésamo ( tamaño  mediano),PASTA DE MANI | PASTA DE SESAMO,5900,UNIDAD,ENTRE NUTS,-,,
+,"Barritas de arroz con semillas de amaranto, sésamo y chía Choco Blanco",BARRITAS DE ARROZ S/TACC,550,UNIDAD,CROWIE,-,,
+,"Barritas de arroz con semillas de amaranto, sésamo y chía sabor Chocolate",BARRITAS DE ARROZ S/TACC,550,UNIDAD,CROWIE,-,,
+,"Barritas de arroz con semillas de amaranto, sésamo y chía sabor Coco",BARRITAS DE ARROZ S/TACC,550,UNIDAD,CROWIE,-,,
+,"Barritas de arroz con semillas de amaranto, sésamo y chía sabor Frutilla",BARRITAS DE ARROZ S/TACC,550,UNIDAD,CROWIE,-,,
+,"Barritas de arroz con semillas de amaranto, sésamo y chía sabor Limón",BARRITAS DE ARROZ S/TACC,550,UNIDAD,CROWIE,-,,
+,"Barritas de arroz con semillas de amaranto, sésamo y chía sabor Marroc",BARRITAS DE ARROZ S/TACC,550,UNIDAD,CROWIE,-,,
+,Aceite de  Oliva x 1 litro envase Pet,ACETO / ACEITES / SALSAS DE SOJA / ADEREZO / ACEITES SABORARIZADOS,3441,UNIDAD,Rodrigo de Vivar,-,,
+,Aceto Balsámico x 500 ml PET,ACETO / ACEITES / SALSAS DE SOJA / ADEREZO / ACEITES SABORARIZADOS,3440,UNIDAD,Libanti,0,,
+,Aderezo Caesar S/TACC x 250 cc,ACETO / ACEITES / SALSAS DE SOJA / ADEREZO / ACEITES SABORARIZADOS,4144,UNIDAD,Pampa Goumet,-,,
+,Salsa Barbacoa Premium S/TACC,ACETO / ACEITES / SALSAS DE SOJA / ADEREZO / ACEITES SABORARIZADOS,4560,UNIDAD,Pampa Goumet,-,,
+,Salsa Teriyaki S/TACC x 250 cc  Pampa Gourmet,ACETO / ACEITES / SALSAS DE SOJA / ADEREZO / ACEITES SABORARIZADOS,5880,UNIDAD,Pampa Goumet,-,,
+,Salsa de Soja x 450 ml Sakanashi,ACETO / ACEITES / SALSAS DE SOJA / ADEREZO / ACEITES SABORARIZADOS,3465,UNIDAD,Sakanashi,-,,
+,Salsa de Soja x 960 ml Sakanashi,ACETO / ACEITES / SALSAS DE SOJA / ADEREZO / ACEITES SABORARIZADOS,6300,UNIDAD,Sakanashi,-,,
+,Aceite de Coco Neutro x 200 cc Vidrio S/TACC,ACEITE DE COCO / LECHE DE COCO EN POLVO / LATA,4600,UNIDAD,,-,,
+,Aceite de Coco Neutro x 360 cc Vidrio S/TACC,ACEITE DE COCO / LECHE DE COCO EN POLVO / LATA,6400,UNIDAD,,-,,
+,Leche de Coco en Lata x 400 grs,ACEITE DE COCO / LECHE DE COCO EN POLVO / LATA,4620,UNIDAD,,-,,
+,Fideos de Arroz Spaghetti Clásico x 280 grs,FIDEOS DE ARROZ,3150,UNIDAD,PARTY BECK,-,,
+,Fideos de Arroz Spaghetti Espinaca x 280 grs,FIDEOS DE ARROZ,3150,UNIDAD,PARTY BECK,-,,
+,Fideos de Arroz Spaghetti Morrón x 280 grs,FIDEOS DE ARROZ,3150,UNIDAD,PARTY BECK,-,,
+,Fideos  Nido x 500 grs ( Trigo),FIDEOS INTEGRALES,2145,UNIDAD,EMILIA,-,,
+,Fideos  Penne Rigate x 500 grs ( Centeno),FIDEOS INTEGRALES,2982,UNIDAD,EMILIA,-,,
+,Fideos Fusilli x 500 grs ( Trigo),FIDEOS INTEGRALES,1875,UNIDAD,EMILIA,-,,
+,Fideos Integrales Spaghetti x 227 grs Espinaca 100 % Semolin,FIDEOS INTEGRALES,1540,UNIDAD,MI FIDEO,-,,
+,Fideos Integrales Spaghetti x 227 grs Natural 100 % Semolin,FIDEOS INTEGRALES,1540,UNIDAD,MI FIDEO,-,,
+,Arroz  Carnaroli (Italia ),ARROZ,6000,KG,,-,,"250g, 500g, 1kg"
+,Arroz Basmati ( Pakistán),ARROZ,7230,KG,,-,,"250g, 500g, 1kg"
+,Arroz Blanco Largo Fino,ARROZ,2280,KG,,-,,"250g, 500g, 1kg"
+,Arroz Corto Koshihikari para Sushi,ARROZ,3960,KG,,-,,"250g, 500g, 1kg"
+,Arroz Integral Largo Fino ( Agroecológico ),ARROZ,2350,KG,,-,,"250g, 500g, 1kg"
+,Arroz Jazmin (Tailandia),ARROZ,8100,KG,,-,,"250g, 500g, 1kg"
+,Arroz Yamaní  ( Agroecológico ),ARROZ,3400,KG,,-,,"250g, 500g, 1kg"
+,Arveja entera,LEGUMBRES,1300,KG,,-,,"250g, 500g, 1kg"
+,Garbanzo nacional 1 ra calidad,LEGUMBRES,3040,KG,,-,,"250g, 500g, 1kg"
+,Lenteja Nacional,LEGUMBRES,2980,KG,,-,,"250g, 500g, 1kg"
+,Lentejas Turcas,LEGUMBRES,7800,KG,,-,,"250g, 500g, 1kg"
+,Maiz Piscingallo (pororó),LEGUMBRES,2500,KG,,-,,"250g, 500g, 1kg"
+,Poroto Cramberry,LEGUMBRES,3000,KG,,-,,"250g, 500g, 1kg"
+,Poroto Mung,LEGUMBRES,2520,KG,,-,,"250g, 500g, 1kg"
+,Poroto Negro,LEGUMBRES,3670,KG,,-,,"250g, 500g, 1kg"
+,Porotos Aduki,LEGUMBRES,3000,KG,,-,,"250g, 500g, 1kg"
+,Porotos Colorado,LEGUMBRES,3880,KG,,-,,"250g, 500g, 1kg"
+,Porotos de Alubia,LEGUMBRES,3670,KG,,-,,"250g, 500g, 1kg"
+,Porotos de Soja,LEGUMBRES,1980,KG,,-,,"250g, 500g, 1kg"
+,Membrillo x 40 grs,MEMBRILLOS,530,UNIDAD,Valle Dorado,-,,
+,Membrilo  x 500 grs,MEMBRILLOS,0,UNIDAD,Valle Dorado,0,,
+,"Jugo de arándanos S/Azúcar x 1,5 lt",JUGOS DE ARANDANOS SIN TACC ( FITO PLUS ) / JUGO DE ALOE VERA SIN TACC, $2.500,UNIDAD,FITO PLUS,-,,
+,Jugo de Aloe Vera Natural x 250 cc,JUGOS DE ARANDANOS SIN TACC ( FITO PLUS ) / JUGO DE ALOE VERA SIN TACC,2500,UNIDAD,,-,,
+,Jugo de Aloe Vera c/arándonos x 250 cc,JUGOS DE ARANDANOS SIN TACC ( FITO PLUS ) / JUGO DE ALOE VERA SIN TACC,5845,UNIDAD,,-,,
+,Jugo de Aloe Vera c/clorofila y jengibre x 250 cc,JUGOS DE ARANDANOS SIN TACC ( FITO PLUS ) / JUGO DE ALOE VERA SIN TACC,6279,UNIDAD,,-,,
+,Jugo de arándanos C/Stevia x 1.5 lt,JUGOS DE ARANDANOS SIN TACC ( FITO PLUS ) / JUGO DE ALOE VERA SIN TACC, $2.500,UNIDAD,FITO PLUS,-,,
+,Jugo de arándanos S/Azúcar con Chia x 1.5 lt,JUGOS DE ARANDANOS SIN TACC ( FITO PLUS ) / JUGO DE ALOE VERA SIN TACC, $2.500,UNIDAD,FITO PLUS,-,,
+,Aceite de CBD al 15 % x 20 ml (elaborado con la variedades Indico y Sativa ) 100 %,ACEITES Y CREMAS CON EXTRACTO DE CANNABIS (CBD ),7540,UNIDAD,,-,,
+,Aceite de CBD al 20 % x 20 ml (elaborado con la variedades Indico y Sativa ) 100 %,ACEITES Y CREMAS CON EXTRACTO DE CANNABIS (CBD ),7540,UNIDAD,,-,,
+,Aceite de CBD al 30 % x 20 ml (elaborado con la variedades Indico y Sativa ) 100 %,ACEITES Y CREMAS CON EXTRACTO DE CANNABIS (CBD ),7540,UNIDAD,,-,,
+,Aceite de CBD al 40 % x 20 ml (elaborado con la variedades Indico y Sativa ) 100 %,ACEITES Y CREMAS CON EXTRACTO DE CANNABIS (CBD ),7540,UNIDAD,,-,,
+,Aceite de extracto de cannabis para mascotas x 20 ml,ACEITES Y CREMAS CON EXTRACTO DE CANNABIS (CBD ),7540,UNIDAD,,-,,
+,Crema Analgésica x 80 grs con arnica /enebro y cannabis,ACEITES Y CREMAS CON EXTRACTO DE CANNABIS (CBD ),0,UNIDAD,,0,,
+,Crema para masajes con cannabis Flex x 185 grs,ACEITES Y CREMAS CON EXTRACTO DE CANNABIS (CBD ),6000,UNIDAD,,-,,
+,Emulsión desinflamante efecto calor MAX x 185 grs,ACEITES Y CREMAS CON EXTRACTO DE CANNABIS (CBD ),6000,UNIDAD,,-,,
+,Jabón de extracto de cannabis y aloe vera,ACEITES Y CREMAS CON EXTRACTO DE CANNABIS (CBD ),2030,UNIDAD,,-,,
+,Calcio Cubano x 90 grs,VARIOS / PRODUCTOS PERUANOS / REBOZADORES / MATCHA,790,UNIDAD,,-,,
+,Espirulina X 90 grs reforzada con Maca,VARIOS / PRODUCTOS PERUANOS / REBOZADORES / MATCHA,790,UNIDAD,,-,,
+,Graviola x 90 grs,VARIOS / PRODUCTOS PERUANOS / REBOZADORES / MATCHA,790,UNIDAD,,-,,
+,Harina de Coca Mezcla x 90 grs,VARIOS / PRODUCTOS PERUANOS / REBOZADORES / MATCHA,790,UNIDAD,,-,,
+,Maca Peruana Negra 100 % Natural x 125 grs (Es la variedad más potente de todas las Macas),VARIOS / PRODUCTOS PERUANOS / REBOZADORES / MATCHA,1780,UNIDAD,,-,,
+,"Maca Peruana Normal 100 % Natural  x 500 grs(Es antioxidante, energética y revitalizante)",VARIOS / PRODUCTOS PERUANOS / REBOZADORES / MATCHA,1800,UNIDAD,,-,,
+,Maca Peruana Roja 100 % Natural x  90 grs (Mejora la líbido en las mujeres entre otros beneficios),VARIOS / PRODUCTOS PERUANOS / REBOZADORES / MATCHA,790,UNIDAD,,-,,
+,Matcha en Polvo x 50 grs Doy Pack,VARIOS / PRODUCTOS PERUANOS / REBOZADORES / MATCHA,10164,UNIDAD,,-,,
+,Moringa x 90 grs,VARIOS / PRODUCTOS PERUANOS / REBOZADORES / MATCHA,790,UNIDAD,,-,,
+,Pan Rallado S/TACC Vegano x 500 grs,VARIOS / PRODUCTOS PERUANOS / REBOZADORES / MATCHA,3556,UNIDAD,,-,,
+,Panko,VARIOS / PRODUCTOS PERUANOS / REBOZADORES / MATCHA,2550,UNIDAD,,-,,
+,Cloruro de Magnesio en escamas,SUPLEMENTOS VITAMINICOS / COLAGENO HIDROLIZADO EN POLVO,4800,KG,,-,,"250g, 500g, 1kg"
+,Colágeno Hidrolizado (Péptidos Peptan ) a granel x 100 grs ( Imp. Chile ),SUPLEMENTOS VITAMINICOS / COLAGENO HIDROLIZADO EN POLVO,3900,UNIDAD,,-,,
+,Levadura Nutricional x 200 grs (Macrosalud),SUPLEMENTOS VITAMINICOS / COLAGENO HIDROLIZADO EN POLVO,8400,UNIDAD,,-,,
+,Levadura de Cerveza Nutricional x 200 grs (Nutrileva),SUPLEMENTOS VITAMINICOS / COLAGENO HIDROLIZADO EN POLVO,10000,UNIDAD,,-,,
+,Levadura de Cerveza Nutricional x 500 grs (Nutrileva),SUPLEMENTOS VITAMINICOS / COLAGENO HIDROLIZADO EN POLVO,20000,UNIDAD,,-,,
+,Spirulina Microalgas en cápsulas x 100 u. x 300 mg /TACC  Aptos veganos (Marca HGL),SUPLEMENTOS VITAMINICOS / COLAGENO HIDROLIZADO EN POLVO,9170,UNIDAD,,-,,
+,Caramelos de Ambay,MIEL / POLEN / JARABE DE CAÑA /CARAMELOS SALUDABLES,12800,KG,,-,,250g
+,Caramelos de Ginseng,MIEL / POLEN / JARABE DE CAÑA /CARAMELOS SALUDABLES,12806,KG,,-,,250g
+,Caramelos de Jengibre,MIEL / POLEN / JARABE DE CAÑA /CARAMELOS SALUDABLES,12804,KG,,-,,250g
+,Caramelos de Jengibre con Miel,MIEL / POLEN / JARABE DE CAÑA /CARAMELOS SALUDABLES,12805,KG,,-,,250g
+,Caramelos de Menta,MIEL / POLEN / JARABE DE CAÑA /CARAMELOS SALUDABLES,12807,KG,,-,,250g
+,Caramelos de Miel,MIEL / POLEN / JARABE DE CAÑA /CARAMELOS SALUDABLES,12803,KG,,-,,250g
+,Caramelos de Propoleo y Eucaliptus,MIEL / POLEN / JARABE DE CAÑA /CARAMELOS SALUDABLES,12802,KG,,-,,250g
+,Caramelos de Propóleo,MIEL / POLEN / JARABE DE CAÑA /CARAMELOS SALUDABLES,12801,KG,,-,,250g
+,Jarabe de Caña x 300 grs S/TACC,MIEL / POLEN / JARABE DE CAÑA /CARAMELOS SALUDABLES,4100,UNIDAD,,-,,
+,Miel Orgánica S/TACC x 1 kg,MIEL / POLEN / JARABE DE CAÑA /CARAMELOS SALUDABLES,8900,UNIDAD,Miel del Monte,-,,
+,Miel Orgánica S/TACC x 480 grs,MIEL / POLEN / JARABE DE CAÑA /CARAMELOS SALUDABLES,5640,UNIDAD,Miel del Monte,-,,
+,Miel pote de Vidrio x 450 grs.,MIEL / POLEN / JARABE DE CAÑA /CARAMELOS SALUDABLES,4050,UNIDAD,Juricich,-,,
+,Miel pote de Vidrio x 950 grs.,MIEL / POLEN / JARABE DE CAÑA /CARAMELOS SALUDABLES,7650,UNIDAD,Juricich,-,,
+,"Polen (Aumenta la resistencia física, reduce la fatiga y mejora la irrigación cerebral)",MIEL / POLEN / JARABE DE CAÑA /CARAMELOS SALUDABLES,30000,UNIDAD,,-,,
+,Ciruela x 400 grs,MERMELADA 100 % NATURAL  S/TACC SIN AGREGADO DE AZÚCARES 80 % FRUTA 20 % JUGO DE UVA (Marca Natural Gourmet), $4.550,UNIDAD,,-,,
+,Damasco x 400 grs,MERMELADA 100 % NATURAL  S/TACC SIN AGREGADO DE AZÚCARES 80 % FRUTA 20 % JUGO DE UVA (Marca Natural Gourmet), $4.550,UNIDAD,,-,,
+,Durazno x 400 grs,MERMELADA 100 % NATURAL  S/TACC SIN AGREGADO DE AZÚCARES 80 % FRUTA 20 % JUGO DE UVA (Marca Natural Gourmet), $4.550,UNIDAD,,-,,
+,Mandarina x 400 grs,MERMELADA 100 % NATURAL  S/TACC SIN AGREGADO DE AZÚCARES 80 % FRUTA 20 % JUGO DE UVA (Marca Natural Gourmet), $4.550,UNIDAD,,-,,
+,Manzana x 400 grs,MERMELADA 100 % NATURAL  S/TACC SIN AGREGADO DE AZÚCARES 80 % FRUTA 20 % JUGO DE UVA (Marca Natural Gourmet), $4.550,UNIDAD,,-,,
+,Membrillo x 400 grs,MERMELADA 100 % NATURAL  S/TACC SIN AGREGADO DE AZÚCARES 80 % FRUTA 20 % JUGO DE UVA (Marca Natural Gourmet), $4.550,UNIDAD,,-,,
+,Naranja x 400 grs,MERMELADA 100 % NATURAL  S/TACC SIN AGREGADO DE AZÚCARES 80 % FRUTA 20 % JUGO DE UVA (Marca Natural Gourmet), $4.550,UNIDAD,,-,,
+,Pera x 400 grs,MERMELADA 100 % NATURAL  S/TACC SIN AGREGADO DE AZÚCARES 80 % FRUTA 20 % JUGO DE UVA (Marca Natural Gourmet), $4.550,UNIDAD,,-,,
+,Zapallo x 400 grs,MERMELADA 100 % NATURAL  S/TACC SIN AGREGADO DE AZÚCARES 80 % FRUTA 20 % JUGO DE UVA (Marca Natural Gourmet), $4.550,UNIDAD,,-,,
+,Zapallo x 400 grs,MERMELADA 100 % NATURAL  S/TACC SIN AGREGADO DE AZÚCARES 80 % FRUTA 20 % JUGO DE UVA (Marca Natural Gourmet), $4.550,UNIDAD,,-,,

@@ -87,68 +87,71 @@ class CategoryManager:
 
     def configure_fractionation(self):
         st.subheader("Configurar Fraccionamiento")
+
+        # Mostrar todas las categorías disponibles
         cat_options = self.df["CATEGORIA"].astype(str).str.strip().drop_duplicates().tolist()
         selected_cat = st.selectbox("Selecciona la categoría", options=cat_options)
         
-        # Filtrar productos KG de la categoría
-        mask = (
+        # Filtrar productos KG de la categoría elegida
+        mask_kg = (
             (self.df["CATEGORIA"].astype(str).str.strip() == selected_cat) &
             (self.df["KG / UNIDAD"].astype(str).str.strip().str.upper() == "KG")
         )
-        df_cat_kg = self.df[mask]
-        
+        df_cat_kg = self.df[mask_kg]
+
+        # Verificamos si hay productos en esa categoría con UNIDAD
+        mask_unidad = (
+            (self.df["CATEGORIA"].astype(str).str.strip() == selected_cat) &
+            (self.df["KG / UNIDAD"].astype(str).str.strip().str.upper() == "UNIDAD")
+        )
+        df_cat_unidad = self.df[mask_unidad]
+
+        # Si no hay productos en KG, no se aplica fraccionamiento
         if df_cat_kg.empty:
             st.info("No hay productos medidos en KG en la categoría seleccionada. No se aplicará fraccionamiento.")
             return
 
-        # Opciones predefinidas de fraccionamiento
+        # Si hay productos UNIDAD en la misma categoría, limitamos a 2 fraccionamientos
+        if not df_cat_unidad.empty:
+            max_frac = 2
+            st.warning("Esta categoría contiene productos UNIDAD y KG, "
+                    "por lo que solo puedes seleccionar hasta 2 fraccionamientos.")
+        else:
+            max_frac = 3
+
+        # Opciones predefinidas
         opciones = ["100g", "250g", "500g", "1kg", "Personalizable"]
 
-        # 1) Obtenemos los valores de "FRACCIONAMIENTO" que ya tenga esta categoría
-        #    Si hay múltiples productos con distintos fraccionamientos, aquí podrías
-        #    tomar el primero, o usar alguna lógica adicional.
+        # 1) Obtenemos el valor de FRACCIONAMIENTO que ya tenga esta categoría (si existe)
         fracc_existente = df_cat_kg["FRACCIONAMIENTO"].dropna().unique()
-        # Si hay varias filas con distinto fraccionamiento, tomamos la primera
         pre_selected = []
         if len(fracc_existente) > 0:
-            # Tomamos el primer valor no-nulo
-            fracc_str = fracc_existente[0]  # "100g, 250g" por ejemplo
-            # Lo convertimos en lista, separando por comas
+            # Tomamos la primera no-nula
+            fracc_str = fracc_existente[0]  # ejemplo: "100g, 250g"
             pre_selected = [f.strip() for f in fracc_str.split(",") if f.strip()]
 
-        # 2) Creamos el multiselect con preselección
+        # 2) Creamos el multiselect con preselección y max_frac
         selected_options = st.multiselect(
-            "Selecciona hasta 3 opciones de fraccionamiento",
+            "Selecciona hasta 3 opciones de fraccionamiento" if max_frac == 3 else "Selecciona hasta 2 opciones de fraccionamiento",
             options=opciones,
-            default=pre_selected,  # aquí usamos la lista que acabamos de armar
-            max_selections=3
+            default=pre_selected,
+            max_selections=max_frac
         )
 
-        # 3) Si "Personalizable" estaba en pre_selected, deberíamos mostrar el campo de texto
-        #    con el valor que tenía (si es que existía). Esto requiere parsear el fraccionamiento
-        #    personalizable de forma distinta. Para simplicidad, asumimos que si la lista
-        #    contenía algo distinto a 100g, 250g, 500g, 1kg, lo consideramos "Personalizable".
+        # 3) Manejo de "Personalizable"
         custom_value = ""
         if "Personalizable" in selected_options:
-            # Buscamos cuál era el valor "personalizable" previo
-            # (Por ejemplo, si pre_selected contenía "200g")
-            # Lógica sencilla: cualquier string en pre_selected que no esté en opciones fijas
-            # lo consideramos personalizable.
+            # Buscamos valores personalizados previos
             personalizables = [
-                x for x in pre_selected 
+                x for x in pre_selected
                 if x not in ["100g", "250g", "500g", "1kg", "Personalizable"]
             ]
             if personalizables:
-                custom_value = personalizables[0]  # Tomamos el primero
-            # Creamos el text_input con ese valor
+                custom_value = personalizables[0]
             custom_value = st.text_input("Ingresa el valor para fraccionamiento personalizable (ej. '200g')", value=custom_value)
-        else:
-            # Si no se seleccionó "Personalizable", el campo no se muestra
-            pass
 
         # 4) Botón para aplicar
         if st.button("Aplicar Fraccionamiento"):
-            # Construir el string de fraccionamiento
             fracc_values = []
             for op in selected_options:
                 if op == "Personalizable":
@@ -158,11 +161,11 @@ class CategoryManager:
                     fracc_values.append(op)
             fracc_str = ", ".join(fracc_values)
             
-            # Actualizar la columna FRACCIONAMIENTO
-            self.df.loc[mask, "FRACCIONAMIENTO"] = fracc_str
+            # Actualizamos la columna FRACCIONAMIENTO solo en productos KG de la categoría
+            self.df.loc[mask_kg, "FRACCIONAMIENTO"] = fracc_str
             
             st.success(f"Fraccionamiento '{fracc_str}' aplicado a los productos medidos en KG de la categoría '{selected_cat}'.")
-            st.dataframe(self.df[mask])
+            st.dataframe(self.df[mask_kg])
 
                 
     def manage_categories(self):
