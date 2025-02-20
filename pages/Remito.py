@@ -110,62 +110,62 @@ def remito_integration_page():
     st.write("---")
 
     # 4) Formulario para generar el remito
-st.subheader("Generar PDF del remito")
-with st.form("generate_remito_form"):
-    remito_number = st.text_input("Número de remito", value="REM-001")
-    remito_date = st.date_input("Fecha", value=datetime.date.today())
-    from_ = st.text_input("Remitente", value="Tres Senderos")
-    to_ = st.text_input("Destinatario")
-    notes = st.text_area("Notas")
-    terms = st.text_area("Términos", "Envío sin cargo")
-    # Cambiamos a porcentaje
-    discount_percent = st.number_input("Descuento global (%)", min_value=0, value=0)
+    st.subheader("Generar PDF del remito")
+    with st.form("generate_remito_form"):
+        remito_number = st.text_input("Número de remito", value="REM-001")
+        remito_date = st.date_input("Fecha", value=datetime.date.today())
+        from_ = st.text_input("Remitente", value="Tres Senderos")
+        to_ = st.text_input("Destinatario")
+        notes = st.text_area("Notas")
+        terms = st.text_area("Términos", "Envío sin cargo")
+        # Cambiamos a porcentaje
+        discount_percent = st.number_input("Descuento global (%)", min_value=0, value=0)
 
-    generate_submitted = st.form_submit_button("Generar Remito")
-    if generate_submitted:
-        date_str = remito_date.strftime("%b %d, %Y")
-        # Recalcular el subtotal de todos los ítems agregados
-        if st.session_state["remito_items"]:
-            df_items = pd.DataFrame(st.session_state["remito_items"])
-            subtotal = df_items["Subtotal"].sum()
-        else:
-            subtotal = 0
-        # Calculamos el descuento como monto absoluto
-        discount_amount = subtotal * discount_percent / 100
-        
-        data = {
-            "from": from_,
-            "to": to_,
-            "logo": "https://i.ibb.co/Kzy83dbF/pixelcut-export.jpg",
-            "number": remito_number,
-            "date": date_str,
-            "fields[discounts]": "true",
-            "discounts": discount_amount,  # Enviamos el monto calculado
-            "notes": notes,
-            "terms": terms,
-            "header": "",
-            "currency": "ARS",
-            "unit_cost_header": "Importe",
-            "amount_header": "TOTAL",
-            "discounts_title": "Descuento"
-        }
+        generate_submitted = st.form_submit_button("Generar Remito")
+        if generate_submitted:
+            date_str = remito_date.strftime("%b %d, %Y")
+            # Recalcular el subtotal de todos los ítems agregados
+            if st.session_state["remito_items"]:
+                df_items = pd.DataFrame(st.session_state["remito_items"])
+                subtotal = df_items["Subtotal"].sum()
+            else:
+                subtotal = 0
+            # Calculamos el descuento como monto absoluto
+            discount_amount = subtotal * discount_percent / 100
+            
+            data = {
+                "from": from_,
+                "to": to_,
+                "logo": "https://i.ibb.co/Kzy83dbF/pixelcut-export.jpg",
+                "number": remito_number,
+                "date": date_str,
+                "fields[discounts]": "true",
+                "discounts": discount_amount,  # Enviamos el monto calculado
+                "notes": notes,
+                "terms": terms,
+                "header": "",
+                "currency": "ARS",
+                "unit_cost_header": "Importe",
+                "amount_header": "TOTAL",
+                "discounts_title": "Descuento"
+            }
 
-        # Agregar cada ítem
-        for i, item in enumerate(st.session_state["remito_items"]):
-            data[f"items[{i}][name]"] = item["Artículo"]
-            data[f"items[{i}][quantity]"] = item["Cantidad"]
-            data[f"items[{i}][unit_cost]"] = item["Precio"]
+            # Agregar cada ítem
+            for i, item in enumerate(st.session_state["remito_items"]):
+                data[f"items[{i}][name]"] = item["Artículo"]
+                data[f"items[{i}][quantity]"] = item["Cantidad"]
+                data[f"items[{i}][unit_cost]"] = item["Precio"]
 
-        api_key = st.secrets["invoice_api"]["key"]
-        manager = InvoiceManager(api_key=api_key)
-        try:
-            pdf_bytes = manager.generate_invoice_pdf(data)
-            st.session_state["remito_pdf"] = pdf_bytes
-            st.session_state["remito_file_name"] = f"{remito_number}.pdf"
-            st.success("¡Remito generado exitosamente!")
-        except Exception as e:
-            st.error(f"Error al generar el remito: {e}")
-            st.session_state["remito_pdf"] = None
+            api_key = st.secrets["invoice_api"]["key"]
+            manager = InvoiceManager(api_key=api_key)
+            try:
+                pdf_bytes = manager.generate_invoice_pdf(data)
+                st.session_state["remito_pdf"] = pdf_bytes
+                st.session_state["remito_file_name"] = f"{remito_number}.pdf"
+                st.success("¡Remito generado exitosamente!")
+            except Exception as e:
+                st.error(f"Error al generar el remito: {e}")
+                st.session_state["remito_pdf"] = None
 
     # 5) Botón de descarga (fuera del form)
     if st.session_state.get("remito_pdf") is not None:
