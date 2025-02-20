@@ -53,6 +53,3 @@ if st.button("Actualizar Spreadsheet"):
         executor = get_executor()
         future = executor.submit(update_spreadsheet, SPREADSHEET_URL, st.session_state.df)
         st.success("La actualización se inició en un proceso separado.")
-
-if st.button("Generar CSV"):
-    st.success("CSV generado (funcionalidad a implementar en siguientes pasos).")
