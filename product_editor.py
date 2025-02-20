@@ -39,7 +39,7 @@ class ProductEditor:
                         precio_inicial = float(row["PRECIO VENTA"])
                     except ValueError:
                         precio_inicial = 0.0
-                    new_price = st.number_input("Precio", value=precio_inicial, step=1.0, key=f"precio_{index}")
+                    new_price = st.number_input("Precio por KG o por Unidad", value=precio_inicial, step=100.0, key=f"precio_{index}")
                     temp_data[f"precio_{index}"] = new_price
                 
                 with col3:
