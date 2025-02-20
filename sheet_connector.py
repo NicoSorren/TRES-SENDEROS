@@ -5,7 +5,6 @@ import streamlit as st
 import pandas as pd
 import concurrent.futures
 
-@st.cache_data(show_spinner=False)
 def get_data_from_sheet(spreadsheet_url):
     connector = SheetConnector(spreadsheet_url)
     return connector.get_data()
