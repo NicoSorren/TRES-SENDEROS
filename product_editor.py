@@ -62,7 +62,7 @@ class ProductEditor:
                 with col5:
                     hay_stock = (str(row["STOCK"]).strip() == "-")
                         # Elegimos el índice 0 si hay_stock=True, o 1 si False
-                    stock_options = ["Hay stock", "No hay stock"]
+                    stock_options = ["SÍ", "NO"]
                     selected_stock = st.selectbox(
                             "Stock",
                             stock_options,
@@ -79,7 +79,7 @@ class ProductEditor:
                     st.session_state.df.at[index, "PRECIO VENTA"] = temp_data[f"precio_{index}"]
                     st.session_state.df.at[index, "MARCA"] = temp_data[f"marca_{index}"]
                     st.session_state.df.at[index, "COSTO"] = temp_data[f"costo_{index}"]
-                    if temp_data[f"stock_{index}"] == "Hay stock":
+                    if temp_data[f"stock_{index}"] == "SÍ":
                             st.session_state.df.at[index, "STOCK"] = "-"
                     else:
                             st.session_state.df.at[index, "STOCK"] = "0"
