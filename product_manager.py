@@ -89,7 +89,7 @@ class ProductManager:
 
         # 1) Seleccionamos la categoría FUERA del formulario
         categorias = self.df["CATEGORIA"].astype(str).str.strip().unique().tolist()
-        categoria_seleccionada = st.selectbox("Selecciona la categoría", options=categorias)
+        categoria_seleccionada = st.selectbox("Selecciona la categoría", options=categorias, key="delete_category_selectbox")
 
         # Filtramos los productos de esa categoría
         df_cat = self.df[self.df["CATEGORIA"].astype(str).str.strip() == categoria_seleccionada]
