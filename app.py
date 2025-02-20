@@ -8,7 +8,7 @@ from product_editor import ProductEditor
 from product_manager import ProductManager
 from category_manager import CategoryManager
 
-st.set_page_config(page_title="Gestión de Productos")  # Única llamada a set_page_config
+st.set_page_config(page_title="Gestión de Productos", layout="wide") # Única llamada a set_page_config
 
 st.title("Gestión de Productos")
 
