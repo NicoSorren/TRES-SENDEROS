@@ -1,22 +1,21 @@
 import time
 import streamlit as st
 import pandas as pd
-from sheet_connector import get_data_from_sheet  # Usamos la función cacheada
+import concurrent.futures
+
+from sheet_connector import get_data_from_sheet, update_spreadsheet
 from product_editor import ProductEditor
 from product_manager import ProductManager
 from category_manager import CategoryManager
-from category_reorder import reorder_categories
 
-st.set_page_config(page_title="Gestión de Productos")
+st.set_page_config(page_title="Gestión de Productos")  # Única llamada a set_page_config
+
 st.title("Gestión de Productos")
 
 SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1i4kafAJQvVkKbkVIo5LldsN7R-ApeWhHDKZjBvsguoo/edit?gid=0#gid=0"
 
-# Medimos el tiempo de carga de datos
-start_time = time.perf_counter()
 df = get_data_from_sheet(SPREADSHEET_URL)
-end_time = time.perf_counter()
-st.write(f"Tiempo de carga de datos: {end_time - start_time:.3f} segundos")
+
 
 if "df" not in st.session_state:
     st.session_state.df = df.copy()
@@ -45,11 +44,15 @@ with tabs[3]:
     cat_manager = CategoryManager()
     cat_manager.manage_categories()
 
+@st.cache_resource(show_spinner=False)
+def get_executor():
+    return concurrent.futures.ProcessPoolExecutor(max_workers=1)
+
 if st.button("Actualizar Spreadsheet"):
-    from sheet_connector import SheetConnector
-    connector = SheetConnector(SPREADSHEET_URL)
-    connector.update_data(st.session_state.df)
-    st.success("Spreadsheet actualizado correctamente.")
+    with st.spinner("Actualizando la hoja de cálculo en segundo plano..."):
+        executor = get_executor()
+        future = executor.submit(update_spreadsheet, SPREADSHEET_URL, st.session_state.df)
+        st.success("La actualización se inició en un proceso separado.")
 
 if st.button("Generar CSV"):
     st.success("CSV generado (funcionalidad a implementar en siguientes pasos).")

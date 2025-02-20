@@ -3,6 +3,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import streamlit as st
 import pandas as pd
+import concurrent.futures
 
 @st.cache_data(show_spinner=False)
 def get_data_from_sheet(spreadsheet_url):
@@ -58,3 +59,39 @@ class SheetConnector:
         data = [df_clean.columns.tolist()] + df_clean.values.tolist()
         # Actualizar la hoja, a partir de la celda A1
         sheet.update('A1', data)
+
+    def delete_category_rows(self, category_name):
+        """
+        Elimina del spreadsheet todas las filas cuyo valor en la columna "CATEGORIA"
+        coincida (ignorando mayúsculas y espacios) con category_name.
+        """
+        spreadsheet = self.client.open_by_url(self.spreadsheet_url)
+        sheet = spreadsheet.sheet1
+
+        # Obtener todas las filas de la hoja
+        all_rows = sheet.get_all_values()
+        if not all_rows:
+            return
+
+        # Se asume que la primera fila es el encabezado.
+        header = all_rows[0]
+        try:
+            cat_index = header.index("CATEGORIA")
+        except ValueError:
+            st.error("No se encontró la columna 'CATEGORIA' en el spreadsheet.")
+            return
+
+        # Recorrer las filas (a partir de la fila 2) y almacenar las filas que coinciden
+        rows_to_delete = []
+        for i, row in enumerate(all_rows[1:], start=2):  # start=2: fila 1 es el encabezado
+            if len(row) > cat_index and row[cat_index].strip().lower() == category_name.strip().lower():
+                rows_to_delete.append(i)
+
+        # Ordenar en orden descendente para borrar sin afectar los índices
+        rows_to_delete.sort(reverse=True)
+        for row_num in rows_to_delete:
+            sheet.delete_rows(row_num)
+
+def update_spreadsheet(spreadsheet_url, df):
+    connector = SheetConnector(spreadsheet_url)
+    connector.update_data(df)
