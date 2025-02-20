@@ -136,6 +136,7 @@ def remito_integration_page():
         remito_date = st.date_input("Fecha", value=datetime.date.today())
         from_ = st.text_input("Remitente", value="Tres Senderos")
         to_ = st.text_input("Destinatario")
+        address = st.text_area("Dirección del cliente")  # <-- NUEVO: dirección
         notes = st.text_area("Notas")
         terms = st.text_area("Términos", "Envío sin cargo")
         # Cambiamos a porcentaje
@@ -144,30 +145,38 @@ def remito_integration_page():
         generate_submitted = st.form_submit_button("Generar Remito")
         if generate_submitted:
             date_str = remito_date.strftime("%b %d, %Y")
-            # Recalcular el subtotal de todos los ítems agregados
+
+            # Recalcular el subtotal
             if st.session_state["remito_items"]:
                 df_items = pd.DataFrame(st.session_state["remito_items"])
                 subtotal = df_items["Subtotal"].sum()
             else:
                 subtotal = 0
-            # Calculamos el descuento como monto absoluto
+
+            # Calculamos el monto de descuento
             discount_amount = subtotal * discount_percent / 100
-            
+
+            # Para que aparezca "Descuento (10%)" en la línea de subtotales,
+            # renombramos discounts_title con el porcentaje:
+            discount_title_str = f"Descuento ({discount_percent}%)"
+
             data = {
                 "from": from_,
                 "to": to_,
+                "ship_to": address,   # <-- NUEVO: Se mostrará como “Ship To” por defecto
                 "logo": "https://i.ibb.co/Kzy83dbF/pixelcut-export.jpg",
                 "number": remito_number,
                 "date": date_str,
                 "fields[discounts]": "true",
-                "discounts": discount_amount,  # Enviamos el monto calculado
+                "discounts": discount_amount,  
                 "notes": notes,
                 "terms": terms,
                 "header": "",
                 "currency": "ARS",
                 "unit_cost_header": "Importe",
                 "amount_header": "TOTAL",
-                "discounts_title": "Descuento"
+                # Cambiamos discounts_title para que muestre el porcentaje
+                "discounts_title": discount_title_str
             }
 
             # Agregar cada ítem
@@ -186,6 +195,7 @@ def remito_integration_page():
             except Exception as e:
                 st.error(f"Error al generar el remito: {e}")
                 st.session_state["remito_pdf"] = None
+
 
     # 5) Botón de descarga (fuera del form)
     if st.session_state.get("remito_pdf") is not None:
