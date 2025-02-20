@@ -99,13 +99,33 @@ def remito_integration_page():
 
     # 3) Mostrar la tabla de ítems añadidos
     st.subheader("Artículos en el remito")
+
     if st.session_state["remito_items"]:
         df_items = pd.DataFrame(st.session_state["remito_items"])
-        st.table(df_items)
-        total_remito = df_items["Subtotal"].sum()
-        st.write(f"**Total:** {total_remito} ARS")
+
+        # Mostramos la tabla editable
+        edited_df = st.data_editor(
+            df_items,
+            num_rows="dynamic",           # Permite agregar o eliminar filas
+            use_container_width=True,     # Para que se ajuste al ancho
+            key="remito_data_editor"
+        )
+
+        # Calcular total
+        if "Subtotal" in edited_df.columns:
+            total_remito = edited_df["Subtotal"].sum()
+        else:
+            total_remito = 0
+
+        st.write(f"**Total:** {total_remito:.2f} ARS")
+
+        # Almacenar los cambios en session_state
+        # Convertimos edited_df a diccionarios para re-guardar en la lista "remito_items"
+        st.session_state["remito_items"] = edited_df.to_dict("records")
+
     else:
         st.info("Aún no hay artículos en el remito.")
+
 
     st.write("---")
 
