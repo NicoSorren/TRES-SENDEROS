@@ -28,7 +28,7 @@ class ProductEditor:
         with st.form(key=f"form_{selected_category}"):
             for index, row in df_cat.iterrows():
                 st.markdown(f"**Producto:** {row['PRODUCTO']}")
-                col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+                col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 1, 1])
                 
                 with col1:
                     new_name = st.text_input("Nombre", value=row["PRODUCTO"], key=f"name_{index}")
@@ -58,6 +58,18 @@ class ProductEditor:
                                 key=f"costo_{index}"
                             )
                             temp_data[f"costo_{index}"] = new_costo
+
+                with col5:
+                    hay_stock = (str(row["STOCK"]).strip() == "-")
+                        # Elegimos el índice 0 si hay_stock=True, o 1 si False
+                    stock_options = ["Hay stock", "No hay stock"]
+                    selected_stock = st.selectbox(
+                            "Stock",
+                            stock_options,
+                            index=(0 if hay_stock else 1),
+                            key=f"stock_{index}"
+                        )
+                    temp_data[f"stock_{index}"] = selected_stock
             
             submitted = st.form_submit_button("Guardar cambios en esta categoría")
             if submitted:
@@ -67,4 +79,8 @@ class ProductEditor:
                     st.session_state.df.at[index, "PRECIO VENTA"] = temp_data[f"precio_{index}"]
                     st.session_state.df.at[index, "MARCA"] = temp_data[f"marca_{index}"]
                     st.session_state.df.at[index, "COSTO"] = temp_data[f"costo_{index}"]
+                    if temp_data[f"stock_{index}"] == "Hay stock":
+                            st.session_state.df.at[index, "STOCK"] = "-"
+                    else:
+                            st.session_state.df.at[index, "STOCK"] = "0"
                 st.success(f"Cambios guardados para la categoría {selected_category}")
