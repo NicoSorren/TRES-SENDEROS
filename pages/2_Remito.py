@@ -1,5 +1,8 @@
 import streamlit as st
 import pandas as pd
+import datetime
+from io import BytesIO
+from invoice_manager import InvoiceManager  # Tu clase POO
 
 def remito_integration_page():
     st.title("Generar Remito con Productos Existentes")
@@ -23,7 +26,7 @@ def remito_integration_page():
     # 1) Selección de categoría y producto (fuera del form)
     st.subheader("Selecciona el producto")
     categorias = df["CATEGORIA"].astype(str).str.strip().unique().tolist()
-    cat_selected = st.selectbox("Categoría", options=categorias)
+    cat_selected = st.selectbox("Categoría", options=categorias, key="cat_selectbox")
 
     df_cat = df[df["CATEGORIA"].astype(str).str.strip() == cat_selected]
     if df_cat.empty:
@@ -31,7 +34,7 @@ def remito_integration_page():
         return
 
     productos_cat = df_cat["PRODUCTO"].astype(str).unique().tolist()
-    prod_selected = st.selectbox("Producto", options=productos_cat)
+    prod_selected = st.selectbox("Producto", options=productos_cat, key="prod_selectbox")
 
     # Obtenemos los datos del producto seleccionado
     df_prod = df_cat[df_cat["PRODUCTO"].astype(str) == prod_selected].iloc[0]
@@ -45,7 +48,7 @@ def remito_integration_page():
     if tipo.upper().strip() == "KG":
         st.write("El producto se vende por KG. Selecciona fraccionamiento:")
         fracc_options = ["100g", "250g", "500g", "1kg", "Personalizable"]
-        fracc_selected = st.selectbox("Fraccionamiento", options=fracc_options)
+        fracc_selected = st.selectbox("Fraccionamiento", options=fracc_options, key="fracc_selectbox")
 
         if fracc_selected == "100g":
             fraction_label = "100g"
@@ -116,7 +119,93 @@ def remito_integration_page():
         st.info("Aún no hay artículos en el remito.")
 
     # (Resto del código para generar PDF, descargarlo, etc.)
-    # ...
+    # 
+    st.write("---")
+
+    # 4) Formulario para generar el remito
+    st.subheader("Generar PDF del remito")
+    with st.form("generate_remito_form"):
+        remito_number = st.text_input("Número de remito", value="REM-001")
+        remito_date = st.date_input("Fecha", value=datetime.date.today())
+        from_ = st.text_input("Remitente", value="Tres Senderos")
+        to_ = st.text_input("Destinatario")
+        address = st.text_area("Dirección del cliente")  # <-- NUEVO: dirección
+        notes = st.text_area("Notas")
+        terms = st.text_area("Términos", "Envío sin cargo")
+        # Cambiamos a porcentaje
+        discount_percent = st.number_input("Descuento global (%)", min_value=0, value=0)
+
+        generate_submitted = st.form_submit_button("Generar Remito")
+        if generate_submitted:
+            date_str = remito_date.strftime("%b %d, %Y")
+
+            # Recalcular el subtotal
+            if st.session_state["remito_items"]:
+                df_items = pd.DataFrame(st.session_state["remito_items"])
+                subtotal = df_items["Subtotal"].sum()
+            else:
+                subtotal = 0
+
+            # Calculamos el monto de descuento
+            discount_amount = subtotal * discount_percent / 100
+
+            # Para que aparezca "Descuento (10%)" en la línea de subtotales,
+            # renombramos discounts_title con el porcentaje:
+            discount_title_str = f"Descuento ({discount_percent}%)"
+
+            data = {
+                "from": from_,
+                "to": to_,
+                "ship_to": address,   # <-- NUEVO: Se mostrará como “Ship To” por defecto
+                "logo": "https://i.ibb.co/Kzy83dbF/pixelcut-export.jpg",
+                "number": remito_number,
+                "date": date_str,
+                "fields[discounts]": "true",
+                "discounts": discount_amount,  
+                "notes": notes,
+                "terms": terms,
+                "header": "",
+                "currency": "ARS",
+                "unit_cost_header": "Importe",
+                "amount_header": "TOTAL",
+                # Cambiamos discounts_title para que muestre el porcentaje
+                "discounts_title": discount_title_str
+            }
+
+            # Agregar cada ítem
+            for i, item in enumerate(st.session_state["remito_items"]):
+                data[f"items[{i}][name]"] = item["Artículo"]
+                data[f"items[{i}][quantity]"] = item["Cantidad"]
+                data[f"items[{i}][unit_cost]"] = item["Precio"]
+
+            api_key = st.secrets["invoice_api"]["key"]
+            manager = InvoiceManager(api_key=api_key)
+            try:
+                pdf_bytes = manager.generate_invoice_pdf(data)
+                st.session_state["remito_pdf"] = pdf_bytes
+                st.session_state["remito_file_name"] = f"{remito_number}.pdf"
+                st.success("¡Remito generado exitosamente!")
+            except Exception as e:
+                st.error(f"Error al generar el remito: {e}")
+                st.session_state["remito_pdf"] = None
+
+
+    # 5) Botón de descarga (fuera del form)
+    if st.session_state.get("remito_pdf") is not None:
+        st.download_button(
+            label="Descargar PDF",
+            data=st.session_state["remito_pdf"],
+            file_name=st.session_state["remito_file_name"],
+            mime="application/pdf"
+        )
+
+    st.write("---")
+    # Botón para reiniciar y generar un nuevo remito
+    if st.button("Generar Remito Nuevo"):
+        st.session_state["remito_items"] = []
+        st.session_state["remito_pdf"] = None
+        st.session_state["remito_file_name"] = None
+        st.success("Se han reiniciado los datos. Ahora puedes generar un nuevo remito.")
 
 if __name__ == "__main__":
     remito_integration_page()
