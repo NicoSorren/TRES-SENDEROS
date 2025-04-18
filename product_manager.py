@@ -27,45 +27,54 @@ class ProductManager:
         with st.form(key="add_product_form"):
             producto = st.text_input("Nombre del Producto", key="producto_input")
             precio = st.text_input("Precio Venta (ej.: $20.200)", key="precio_input")
-            marca = st.text_input("Marca", key="marca_input")
+            costo  = st.text_input("Costo (ej.: $10.000)", key="costo_input")            # ← Nuevo campo
+            marca  = st.text_input("Marca", key="marca_input")
 
             if cat_option == "Existente":
                 categorias_existentes = self.df["CATEGORIA"].astype(str).str.strip().unique().tolist()
                 categoria = st.selectbox("Selecciona la Categoría", options=categorias_existentes, key="categoria_existente")
             else:
                 categoria = st.text_input("Nombre de la nueva Categoría", key="nueva_categoria")
-    
-            tipo = st.selectbox("Tipo de Venta", options=["KG", "UNIDAD"], key="tipo_venta")
-            stock = st.text_input("Stock (usa '-' para stock ilimitado)", key="stock_input")
+
+            tipo  = st.selectbox("Tipo de Venta", options=["KG", "UNIDAD"], key="tipo_venta")
+            stock = st.text_input("Stock (usa '-' para stock ilimitado y '0' cuando hay stock)", key="stock_input")
             
+            # Lógica de variante igual que antes...
             if cat_option == "Existente" and tipo.upper().strip() == "KG":
                 df_cat = self.df[self.df["CATEGORIA"].astype(str).str.strip() == categoria]
                 kg_products = df_cat[df_cat["KG / UNIDAD"].astype(str).str.strip().str.upper() == "KG"]
 
                 if not kg_products.empty:
                     frac_values = kg_products["FRACCIONAMIENTO"].dropna().unique()
-                    if len(frac_values) > 0:
-                        variante = frac_values[0]
-                    else:
-                        variante = ""
+                    variante = frac_values[0] if len(frac_values) > 0 else ""
                 else:
                     variante = ""
             else:
-                variante = st.text_input("Fraccionamiento (Ej: 100g, 250g, 500g o 'unidad' para UNIDAD)", value="", key="variante_input")
-    
+                variante = st.text_input("Fraccionamiento (Ej: 100g, 250g, 500g o 'unidad' para UNIDAD)",
+                                        value="", key="variante_input")
+
             submitted = st.form_submit_button("Agregar Producto")
             if submitted:
+                # Parseo del precio
                 try:
                     precio_num = float(precio.replace('$','').replace('.', '').replace(',', '.').strip())
                 except Exception as e:
                     st.error(f"Error en el precio: {e}")
                     precio_num = 0.0
 
+                # Parseo del costo
+                try:
+                    costo_num = float(costo.replace('$','').replace('.', '').replace(',', '.').strip())
+                except Exception as e:
+                    st.error(f"Error en el costo: {e}")
+                    costo_num = 0.0
+
                 categoria = categoria.strip()
                 if not categoria:
                     st.error("La categoría no puede estar vacía.")
                     return
 
+                # Manejo de categorías nuevas
                 current_categories = self.df["CATEGORIA"].astype(str).str.strip().unique().tolist()
                 if cat_option == "Nueva" and categoria in current_categories:
                     st.warning(f"La categoría '{categoria}' ya existía, se usará esa.")
@@ -75,10 +84,9 @@ class ProductManager:
                     else:
                         st.session_state.category_order = current_categories + [categoria]
 
-                # Recuperamos used_skus y cat_codes desde session_state
+                # Generación de SKU
                 used_skus = st.session_state["used_skus"]
                 cat_codes = st.session_state["cat_codes"]
-
                 sku = generar_sku(
                     nombre_producto=producto,
                     categoria=categoria,
@@ -88,10 +96,12 @@ class ProductManager:
                     cat_codes=cat_codes
                 )
 
+                # Nuevo diccionario incluyendo COSTO
                 new_product = {
                     "SKU": sku,
                     "PRODUCTO": producto,
                     "PRECIO VENTA": precio_num,
+                    "COSTO": costo_num,                       # ← Se añade aquí
                     "MARCA": marca,
                     "CATEGORIA": categoria,
                     "KG / UNIDAD": tipo,
@@ -99,12 +109,13 @@ class ProductManager:
                     "FRACCIONAMIENTO": variante
                 }
 
+                # Inserción en el DataFrame manteniendo orden por categoría
                 df_current = st.session_state.df
                 indices = df_current[df_current["CATEGORIA"].astype(str).str.strip() == categoria].index.tolist()
                 if indices:
                     insert_index = indices[-1] + 1
                     df_before = df_current.iloc[:insert_index]
-                    df_after = df_current.iloc[insert_index:]
+                    df_after  = df_current.iloc[insert_index:]
                     new_row_df = pd.DataFrame([new_product])
                     st.session_state.df = pd.concat([df_before, new_row_df, df_after], ignore_index=True)
                 else:
@@ -112,6 +123,7 @@ class ProductManager:
 
                 st.success(f"Producto '{producto}' agregado correctamente en la categoría '{categoria}' con SKU {sku}.")
                 st.dataframe(st.session_state.df)
+
 
     def delete_product(self):
         st.write("### Eliminar Producto")
