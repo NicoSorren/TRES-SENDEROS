@@ -91,6 +91,24 @@ class SheetConnector:
         for row_num in rows_to_delete:
             sheet.delete_rows(row_num)
 
+    def append_invoice_record(self, record: dict, sheet_name="Remitos"):
+        """Append an invoice/remito record to the specified worksheet.
+
+        If the worksheet does not exist, it will be created and the keys of
+        ``record`` will be written as the header in the first row.
+        """
+        spreadsheet = self.client.open_by_url(self.spreadsheet_url)
+
+        try:
+            worksheet = spreadsheet.worksheet(sheet_name)
+        except gspread.exceptions.WorksheetNotFound:
+            worksheet = spreadsheet.add_worksheet(
+                title=sheet_name, rows="1", cols=str(len(record))
+            )
+            worksheet.append_row(list(record.keys()))
+
+        worksheet.append_row(list(record.values()))
+
 def update_spreadsheet(spreadsheet_url, df):
     connector = SheetConnector(spreadsheet_url)
     connector.update_data(df)
