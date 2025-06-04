@@ -13,6 +13,9 @@ main Google spreadsheet. The sheet contains the following columns in order:
 Each time a remito is generated, these values are appended as a new row. You
 can analyse revenue directly in Google Sheets or with pandas.
 
+If the **Remitos** worksheet does not exist or is empty, the app will
+automatically create it and insert this header row.
+
 ## Google Sheets totals
 
 To compute the total revenue for a month use a formula such as:

@@ -106,6 +106,10 @@ class SheetConnector:
                 title=sheet_name, rows="1", cols=str(len(record))
             )
             worksheet.append_row(list(record.keys()))
+        else:
+            # Ensure header row exists for previously created empty sheets
+            if not worksheet.get_all_values():
+                worksheet.append_row(list(record.keys()))
 
         worksheet.append_row(list(record.values()))
 
