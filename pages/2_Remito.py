@@ -3,6 +3,9 @@ import pandas as pd
 import datetime
 from io import BytesIO
 from invoice_manager import InvoiceManager  # Tu clase POO
+from sheet_connector import SheetConnector
+
+SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1i4kafAJQvVkKbkVIo5LldsN7R-ApeWhHDKZjBvsguoo/edit?gid=0#gid=0"
 
 def remito_integration_page():
     st.title("Generar Remito con Productos Existentes")
@@ -148,6 +151,7 @@ def remito_integration_page():
 
             # Calculamos el monto de descuento
             discount_amount = subtotal * discount_percent / 100
+            total_final = subtotal - discount_amount
 
             # Para que aparezca "Descuento (10%)" en la línea de subtotales,
             # renombramos discounts_title con el porcentaje:
@@ -185,6 +189,17 @@ def remito_integration_page():
                 st.session_state["remito_pdf"] = pdf_bytes
                 st.session_state["remito_file_name"] = f"{remito_number}.pdf"
                 st.success("¡Remito generado exitosamente!")
+
+                invoice_record = {
+                    "Number": remito_number,
+                    "Date": remito_date.strftime("%Y-%m-%d"),
+                    "Customer name": to_,
+                    "Subtotal": subtotal,
+                    "Discount": discount_amount,
+                    "Total final": total_final,
+                }
+                connector = SheetConnector(SPREADSHEET_URL)
+                connector.append_invoice_record(invoice_record)
             except Exception as e:
                 st.error(f"Error al generar el remito: {e}")
                 st.session_state["remito_pdf"] = None
