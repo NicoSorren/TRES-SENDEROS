@@ -146,6 +146,15 @@ class ProductEditor:
             self.configurar_mix(index_to_edit)
 
     def configurar_mix(self, index):
+        """Configure the mix components for a product using percentages.
+
+        Each component is selected from the product list and assigned a
+        percentage of the total mix weight. The method validates that the
+        accumulated percentage equals 100%% and automatically calculates the
+        final mix price using current component prices and a preparation
+        factor. The configuration and factor are stored in the DataFrame for
+        future recalculations.
+        """
         st.markdown("#### Configurar Mix para el Producto")
         product_row = st.session_state.df.loc[index]
         st.write("Producto:", product_row["PRODUCTO"])
