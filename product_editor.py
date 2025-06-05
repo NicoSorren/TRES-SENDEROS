@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 import re
+import json
 
 class ProductEditor:
     def __init__(self, dataframe):
@@ -145,16 +146,37 @@ class ProductEditor:
             self.configurar_mix(index_to_edit)
 
     def configurar_mix(self, index):
+        """Configure the mix components for a product using percentages.
+
+        Each component is selected from the product list and assigned a
+        percentage of the total mix weight. The method validates that the
+        accumulated percentage equals 100%% and automatically calculates the
+        final mix price using current component prices and a preparation
+        factor. The configuration and factor are stored in the DataFrame for
+        future recalculations.
+        """
         st.markdown("#### Configurar Mix para el Producto")
         product_row = st.session_state.df.loc[index]
         st.write("Producto:", product_row["PRODUCTO"])
         st.write("Precio base (por kg):", product_row["PRECIO VENTA"])
-        
+
+        # Aseguramos que existan las columnas para almacenar la configuración
+        if "MIX_COMPONENTES" not in st.session_state.df.columns:
+            st.session_state.df["MIX_COMPONENTES"] = ""
+        if "FACTOR_PREPARACION" not in st.session_state.df.columns:
+            st.session_state.df["FACTOR_PREPARACION"] = 1.10
+
         # Inicializamos (o reutilizamos) la lista de componentes de mix en session_state
         if "mix_components_edit" not in st.session_state:
-            st.session_state.mix_components_edit = []
+            if pd.notnull(product_row.get("MIX_COMPONENTES", "")):
+                try:
+                    st.session_state.mix_components_edit = json.loads(product_row["MIX_COMPONENTES"])
+                except Exception:
+                    st.session_state.mix_components_edit = []
+            else:
+                st.session_state.mix_components_edit = []
 
-        st.info("Agrega los componentes que integrarán el mix (total de 1 kg).")
+        st.info("Agrega los componentes que integrarán el mix en porcentaje del total (debe sumar 100%).")
         col1, col2 = st.columns(2)
         with col1:
             categorias = sorted(st.session_state.df["CATEGORIA"].astype(str).str.strip().unique())
@@ -163,38 +185,61 @@ class ProductEditor:
             df_comp = st.session_state.df[st.session_state.df["CATEGORIA"].astype(str).str.strip() == comp_cat]
             prod_options = df_comp["PRODUCTO"].astype(str).unique().tolist()
             comp_prod = st.selectbox("Producto del componente", options=prod_options, key=f"mix_comp_prod_{index}")
-        
-        comp_qty = st.number_input("Cantidad (g) para este componente", min_value=1, max_value=1000, value=250, key=f"mix_comp_qty_{index}")
+
+        comp_pct = st.number_input(
+            "Porcentaje de este componente (%)",
+            min_value=0.0,
+            max_value=100.0,
+            value=0.0,
+            step=0.1,
+            key=f"mix_comp_pct_{index}"
+        )
         if st.button("Agregar Componente", key=f"add_mix_comp_{index}"):
-            new_comp = {"Categoría": comp_cat, "Producto": comp_prod, "Cantidad (g)": comp_qty}
+            new_comp = {"Categoría": comp_cat, "Producto": comp_prod, "Porcentaje (%)": comp_pct}
             st.session_state.mix_components_edit.append(new_comp)
             st.success("Componente agregado.")
-        
+
         if st.session_state.mix_components_edit:
             st.write("Componentes agregados:")
             df_mix_comp = pd.DataFrame(st.session_state.mix_components_edit)
             st.dataframe(df_mix_comp)
-            
-            # Calcular el precio del mix en tiempo real
-            total_subtotal = 0
+
+            total_pct = df_mix_comp["Porcentaje (%)"].sum()
+            st.markdown(f"**Total porcentaje: {total_pct:.2f}%**")
+            if abs(total_pct - 100) > 0.01:
+                st.warning("La suma de porcentajes debe ser 100%.")
+
+            factor_default = product_row.get("FACTOR_PREPARACION", 1.10)
+            factor = st.number_input(
+                "Factor de preparación",
+                min_value=1.0,
+                value=float(factor_default),
+                step=0.01,
+                key=f"mix_factor_{index}"
+            )
+
+            precio_mix = 0
             for comp in st.session_state.mix_components_edit:
                 df_price = st.session_state.df[st.session_state.df["PRODUCTO"] == comp["Producto"]]
                 if not df_price.empty:
                     precio_kg = float(df_price.iloc[0]["PRECIO VENTA"])
                 else:
                     precio_kg = 0
-                total_subtotal += precio_kg * (comp["Cantidad (g)"] / 1000)
-            
-            factor = st.number_input("Factor de preparación", min_value=1.0, value=1.10, step=0.01, key=f"mix_factor_{index}")
-            precio_mix = total_subtotal * factor
+                precio_mix += precio_kg * (comp["Porcentaje (%)"] / 100.0)
+            precio_mix *= factor
             st.markdown(f"**Precio Calculado del Mix: ARS {precio_mix:,.2f}**")
-            
+
             if st.button("Guardar Precio de Mix", key=f"save_mix_{index}"):
-                st.session_state.df.at[index, "PRECIO VENTA"] = precio_mix
-                st.success("Precio actualizado en el producto.")
-                # Limpiamos la variable que indica que estamos editando este mix
-                st.session_state.pop("mix_edit_index")
-                st.session_state.mix_components_edit = []
+                if abs(total_pct - 100) > 0.01:
+                    st.error("La suma de los porcentajes debe ser 100%.")
+                else:
+                    st.session_state.df.at[index, "PRECIO VENTA"] = precio_mix
+                    st.session_state.df.at[index, "MIX_COMPONENTES"] = json.dumps(st.session_state.mix_components_edit)
+                    st.session_state.df.at[index, "FACTOR_PREPARACION"] = factor
+                    st.success("Precio actualizado en el producto.")
+                    # Limpiamos la variable que indica que estamos editando este mix
+                    st.session_state.pop("mix_edit_index")
+                    st.session_state.mix_components_edit = []
 
 if __name__ == "__main__":
     # Normalmente no se ejecuta en multipage, pero queda como ejemplo
