@@ -41,3 +41,48 @@ monthly_total = (
 ```
 
 This will give the total for April 2024.
+
+## Bulk invoice generation
+
+To create several invoices at once and keep an Excel summary you can loop over your invoice data and call the `InvoiceManager` for each entry.
+
+```python
+import pandas as pd
+from invoice_manager import InvoiceManager
+
+manager = InvoiceManager(api_key="YOUR_API_KEY")
+
+april_invoices = [
+    {
+        "number": "R-101",
+        "date": "2024-04-05",
+        "to": "Customer A",
+        "items[0][name]": "Producto A",
+        "items[0][quantity]": 1,
+        "items[0][unit_cost]": 200,
+    },
+    # ... more invoices ...
+]
+
+records = []
+for data in april_invoices:
+    pdf = manager.generate_invoice_pdf(data)
+    with open(f"{data['number']}.pdf", "wb") as f:
+        f.write(pdf.getbuffer())
+
+    subtotal = data["items[0][quantity]"] * data["items[0][unit_cost]"]
+    discount = data.get("discount", 0)
+    records.append({
+        "Number": data["number"],
+        "Date": data["date"],
+        "Customer name": data["to"],
+        "Subtotal": subtotal,
+        "Discount": discount,
+        "Total final": subtotal - discount,
+    })
+
+pd.DataFrame(records).to_excel("invoices_april_2024.xlsx", index=False)
+```
+
+Running this example will produce one PDF per invoice and an
+`invoices_april_2024.xlsx` file summarising them.
