@@ -4,6 +4,7 @@ import pandas as pd
 import concurrent.futures
 
 from sheet_connector import get_data_from_sheet, update_spreadsheet
+from config import SPREADSHEET_URL
 from product_editor import ProductEditor
 from product_manager import ProductManager
 from category_manager import CategoryManager
@@ -11,8 +12,6 @@ from category_manager import CategoryManager
 st.set_page_config(page_title="Gestión de Productos", layout="wide") # Única llamada a set_page_config
 
 st.title("Gestión de Productos")
-
-SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1i4kafAJQvVkKbkVIo5LldsN7R-ApeWhHDKZjBvsguoo/edit?gid=0#gid=0"
 
 df = get_data_from_sheet(SPREADSHEET_URL)
 

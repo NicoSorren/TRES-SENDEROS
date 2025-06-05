@@ -1,6 +1,8 @@
 # category_manager.py
 import streamlit as st
 import pandas as pd
+from config import SPREADSHEET_URL
+from sheet_connector import SheetConnector
 
 class CategoryManager:
     def __init__(self):
@@ -58,8 +60,6 @@ class CategoryManager:
                 st.dataframe(st.session_state.df)
                 
                 # Actualizar el spreadsheet eliminando las filas correspondientes a la categoría
-                SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1i4kafAJQvVkKbkVIo5LldsN7R-ApeWhHDKZjBvsguoo/edit?gid=0#gid=0"
-                from sheet_connector import SheetConnector
                 connector = SheetConnector(SPREADSHEET_URL)
                 connector.delete_category_rows(cat_to_delete)
 
