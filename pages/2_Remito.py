@@ -4,9 +4,26 @@ import datetime
 from io import BytesIO
 from invoice_manager import InvoiceManager  # Tu clase POO
 from sheet_connector import SheetConnector
+import re
 
 SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1i4kafAJQvVkKbkVIo5LldsN7R-ApeWhHDKZjBvsguoo/edit?gid=0#gid=0"
 CLIENTES_SHEET = "CLIENTES"
+
+
+def generar_nuevo_id(df_clientes: pd.DataFrame) -> str:
+    """Genera un ID de cliente incremental con formato CLI-XXX."""
+    if "ID CLIENTE" not in df_clientes.columns or df_clientes.empty:
+        return "CLI-001"
+
+    ids = df_clientes["ID CLIENTE"].dropna().astype(str).tolist()
+    max_num = 0
+    for cid in ids:
+        match = re.search(r"(\d+)$", cid)
+        if match:
+            num = int(match.group(1))
+            if num > max_num:
+                max_num = num
+    return f"CLI-{max_num + 1:03d}"
 
 def remito_integration_page():
     st.title("Generar Remito con Productos Existentes")
@@ -147,16 +164,20 @@ def remito_integration_page():
             nombres = df_clientes["NOMBRE"].tolist()
             cliente_sel = st.selectbox("Selecciona el cliente", options=nombres)
             row_cliente = df_clientes[df_clientes["NOMBRE"] == cliente_sel].iloc[0]
-            to_ = st.text_input("Destinatario", value=row_cliente["NOMBRE"], key="to_existente")
-            address = st.text_area("Dirección del cliente", value=row_cliente.get("DIRECCION", ""), key="addr_existente")
+            to_ = row_cliente["NOMBRE"]
+            address = row_cliente.get("DIRECCION", "")
             id_cliente = row_cliente.get("ID CLIENTE", "")
             telefono = row_cliente.get("TELEFONO", "")
             email = row_cliente.get("EMAIL", "")
             observaciones = row_cliente.get("OBSERVACIONES", "")
+
+            st.text_input("Destinatario", value=to_, key="to_existente", disabled=True)
+            st.text_area("Dirección del cliente", value=address, key="addr_existente", disabled=True)
             nuevo_cliente = False
         else:
             st.write("Datos del nuevo cliente")
-            id_cliente = st.text_input("ID CLIENTE")
+            id_cliente = generar_nuevo_id(df_clientes)
+            st.text_input("ID CLIENTE", value=id_cliente, disabled=True)
             to_ = st.text_input("NOMBRE")
             address = st.text_area("DIRECCION")
             telefono = st.text_input("TELEFONO")
