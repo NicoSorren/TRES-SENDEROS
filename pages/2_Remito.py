@@ -3,6 +3,27 @@ import pandas as pd
 import datetime
 from io import BytesIO
 from invoice_manager import InvoiceManager  # Tu clase POO
+from sheet_connector import SheetConnector
+import re
+
+SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1i4kafAJQvVkKbkVIo5LldsN7R-ApeWhHDKZjBvsguoo/edit?gid=0#gid=0"
+CLIENTES_SHEET = "CLIENTES"
+
+
+def generar_nuevo_id(df_clientes: pd.DataFrame) -> str:
+    """Genera un ID de cliente incremental con formato CLI-XXX."""
+    if "ID CLIENTE" not in df_clientes.columns or df_clientes.empty:
+        return "CLI-001"
+
+    ids = df_clientes["ID CLIENTE"].dropna().astype(str).tolist()
+    max_num = 0
+    for cid in ids:
+        match = re.search(r"(\d+)$", cid)
+        if match:
+            num = int(match.group(1))
+            if num > max_num:
+                max_num = num
+    return f"CLI-{max_num + 1:03d}"
 
 def remito_integration_page():
     st.title("Generar Remito con Productos Existentes")
@@ -22,6 +43,14 @@ def remito_integration_page():
         st.session_state["remito_file_name"] = None
 
     df = st.session_state.df
+
+    # Cargar clientes existentes
+    try:
+        connector_clientes = SheetConnector(SPREADSHEET_URL, CLIENTES_SHEET)
+        df_clientes = connector_clientes.get_data()
+    except Exception as e:
+        st.warning("No se pudo cargar la hoja de clientes.")
+        df_clientes = pd.DataFrame()
 
     # 1) Selección de categoría y producto (fuera del form)
     st.subheader("Selecciona el producto")
@@ -124,15 +153,46 @@ def remito_integration_page():
 
     # 4) Formulario para generar el remito
     st.subheader("Generar PDF del remito")
+
+    # Selección de tipo de cliente FUERA del formulario para que actualice la UI
+    client_type = st.radio(
+        "Tipo de cliente",
+        ["Existente", "Nuevo"],
+        key="client_type",
+    )
+
     with st.form("generate_remito_form"):
         remito_number = st.text_input("Número de remito", value="REM-001")
         remito_date = st.date_input("Fecha", value=datetime.date.today())
         from_ = st.text_input("Remitente", value="Tres Senderos")
-        to_ = st.text_input("Destinatario")
-        address = st.text_area("Dirección del cliente")  # <-- NUEVO: dirección
+
+        if client_type == "Existente" and not df_clientes.empty:
+            nombres = df_clientes["NOMBRE"].tolist()
+            cliente_sel = st.selectbox("Selecciona el cliente", options=nombres)
+            row_cliente = df_clientes[df_clientes["NOMBRE"] == cliente_sel].iloc[0]
+            to_ = row_cliente["NOMBRE"]
+            address = row_cliente.get("DIRECCION", "")
+            id_cliente = row_cliente.get("ID CLIENTE", "")
+            telefono = row_cliente.get("TELEFONO", "")
+            email = row_cliente.get("EMAIL", "")
+            observaciones = row_cliente.get("OBSERVACIONES", "")
+
+            st.text_input("Destinatario", value=to_, key="to_existente", disabled=True)
+            st.text_area("Dirección del cliente", value=address, key="addr_existente", disabled=True)
+            nuevo_cliente = False
+        else:
+            st.write("Datos del nuevo cliente")
+            id_cliente = generar_nuevo_id(df_clientes)
+            st.text_input("ID CLIENTE", value=id_cliente, disabled=True)
+            to_ = st.text_input("NOMBRE")
+            address = st.text_area("DIRECCION")
+            telefono = st.text_input("TELEFONO")
+            email = st.text_input("EMAIL")
+            observaciones = st.text_area("OBSERVACIONES")
+            nuevo_cliente = True
+
         notes = st.text_area("Notas")
         terms = st.text_area("Términos", "Envío sin cargo")
-        # Cambiamos a porcentaje
         discount_percent = st.number_input("Descuento global (%)", min_value=0, value=0)
 
         generate_submitted = st.form_submit_button("Generar Remito")
@@ -185,6 +245,18 @@ def remito_integration_page():
                 st.session_state["remito_pdf"] = pdf_bytes
                 st.session_state["remito_file_name"] = f"{remito_number}.pdf"
                 st.success("¡Remito generado exitosamente!")
+                if nuevo_cliente:
+                    try:
+                        connector_clientes.append_row([
+                            id_cliente,
+                            to_,
+                            address,
+                            telefono,
+                            email,
+                            observaciones,
+                        ])
+                    except Exception as e:
+                        st.error(f"No se pudo guardar el cliente: {e}")
             except Exception as e:
                 st.error(f"Error al generar el remito: {e}")
                 st.session_state["remito_pdf"] = None
