@@ -5,8 +5,8 @@ import streamlit as st
 import pandas as pd
 import concurrent.futures
 
-def get_data_from_sheet(spreadsheet_url):
-    connector = SheetConnector(spreadsheet_url)
+def get_data_from_sheet(spreadsheet_url, worksheet_name=None):
+    connector = SheetConnector(spreadsheet_url, worksheet_name)
     return connector.get_data()
 
 def parse_price(price_str):
@@ -19,8 +19,9 @@ def parse_price(price_str):
         return 0.0
 
 class SheetConnector:
-    def __init__(self, spreadsheet_url):
+    def __init__(self, spreadsheet_url, worksheet_name=None):
         self.spreadsheet_url = spreadsheet_url
+        self.worksheet_name = worksheet_name
         self.scope = [
             "https://spreadsheets.google.com/feeds",
             "https://www.googleapis.com/auth/spreadsheets",
@@ -35,13 +36,20 @@ class SheetConnector:
         client = gspread.authorize(creds)
         return client
 
-    def get_data(self):
+    def _get_sheet(self):
         spreadsheet = self.client.open_by_url(self.spreadsheet_url)
-        sheet = spreadsheet.sheet1
+        if self.worksheet_name:
+            return spreadsheet.worksheet(self.worksheet_name)
+        return spreadsheet.sheet1
+
+    def get_data(self):
+        sheet = self._get_sheet()
         records = sheet.get_all_records()
         df = pd.DataFrame(records)
-        df["PRECIO VENTA"] = df["PRECIO VENTA"].apply(parse_price)
-        df["STOCK"] = df["STOCK"].astype(str).str.strip()
+        if "PRECIO VENTA" in df.columns:
+            df["PRECIO VENTA"] = df["PRECIO VENTA"].apply(parse_price)
+        if "STOCK" in df.columns:
+            df["STOCK"] = df["STOCK"].astype(str).str.strip()
         return df
 
     def update_data(self, df):
@@ -49,8 +57,7 @@ class SheetConnector:
         Actualiza la hoja de cálculo con los datos del DataFrame.
         Se asume que la primera fila de la hoja contiene los encabezados.
         """
-        spreadsheet = self.client.open_by_url(self.spreadsheet_url)
-        sheet = spreadsheet.sheet1
+        sheet = self._get_sheet()
         # Limpiar el DataFrame: reemplazar NaN por cadena vacía
         df_clean = df.copy()
         df_clean = df_clean.where(pd.notnull(df_clean), "")
@@ -64,8 +71,7 @@ class SheetConnector:
         Elimina del spreadsheet todas las filas cuyo valor en la columna "CATEGORIA"
         coincida (ignorando mayúsculas y espacios) con category_name.
         """
-        spreadsheet = self.client.open_by_url(self.spreadsheet_url)
-        sheet = spreadsheet.sheet1
+        sheet = self._get_sheet()
 
         # Obtener todas las filas de la hoja
         all_rows = sheet.get_all_values()
@@ -91,6 +97,10 @@ class SheetConnector:
         for row_num in rows_to_delete:
             sheet.delete_rows(row_num)
 
-def update_spreadsheet(spreadsheet_url, df):
-    connector = SheetConnector(spreadsheet_url)
+    def append_row(self, row_values):
+        sheet = self._get_sheet()
+        sheet.append_row(row_values, value_input_option="USER_ENTERED")
+
+def update_spreadsheet(spreadsheet_url, df, worksheet_name=None):
+    connector = SheetConnector(spreadsheet_url, worksheet_name)
     connector.update_data(df)
