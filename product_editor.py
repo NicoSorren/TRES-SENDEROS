@@ -1,204 +1,204 @@
 # product_editor.py
 import streamlit as st
 import pandas as pd
-import re
+from numbers import Number
+from mix_manager import MixManager
 
 class ProductEditor:
     def __init__(self, dataframe):
-        if "df" not in st.session_state:
-            st.session_state.df = dataframe.copy()
+        # 1) Copiamos el DataFrame que llega del conector
+        df0 = dataframe.copy()
+
+        # 3) Actualizamos el session_state
+        st.session_state.df = df0
         self.df = st.session_state.df
 
     def edit_products_by_category(self):
         st.write("### Edición de Productos por Categoría")
+
+        # — Helper para limpiar y convertir moneda a float —
+        def parse_moneda(val):
+            if isinstance(val, Number):
+                return float(val)
+            s = str(val).replace("$", "").strip()
+            if "," in s:
+                # coma decimal: quito puntos de miles y cambio coma a punto
+                s = s.replace(".", "").replace(",", ".")
+            else:
+                # sin coma: elimino todos los puntos (eran miles)
+                s = s.replace(".", "")
+            try:
+                return float(s)
+            except:
+                return 0.0
+
+        # 1) Selección de categoría
         categorias = sorted(self.df["CATEGORIA"].astype(str).str.strip().unique())
-        selected_category = st.selectbox("Selecciona la categoría a editar", options=categorias)
+        selected_category = st.selectbox(
+            "Selecciona la categoría a editar",
+            options=categorias
+        )
 
-        df_cat = self.df[self.df["CATEGORIA"].astype(str).str.strip() == selected_category]
+        # 2) Filtrar productos de esa categoría
+        df_cat = self.df[
+            self.df["CATEGORIA"].astype(str).str.strip() == selected_category
+        ]
+        if df_cat.empty:
+            st.info("No hay productos en esta categoría.")
+            return
 
-        # Este diccionario guardará los datos editados (nombre, precio, marca, etc.)
-        # clave: índice del producto, valor: dict con campos editados
-        if "temp_data" not in st.session_state:
-            st.session_state.temp_data = {}
-
-        # Antes de renderizar el formulario, inicializamos los valores con lo que tenga session_state.temp_data
+        # 3) Estado temporal de edición
+        st.session_state.temp_data = {}
         temp_data = {}
-        for index, row in df_cat.iterrows():
-            # Si ya existe en session_state.temp_data, lo usamos. Si no, inicializamos con datos del DF.
-            if index not in st.session_state.temp_data:
-                st.session_state.temp_data[index] = {
-                    "new_name": row["PRODUCTO"],
-                    "new_price": float(row.get("PRECIO VENTA", 0)),
-                    "new_brand": row.get("MARCA", ""),
-                    "new_costo": float(row.get("COSTO", 0)),
-                    "selected_stock": "SÍ" if str(row.get("STOCK", "")).strip() == "-" else "NO"
-                }
-            temp_data[index] = st.session_state.temp_data[index]
 
-        # Creamos un diccionario para detectar qué botón de "Editar Mix" fue presionado
-        button_mix_pressed = {}
+        # Inicializar temp_data con los valores actuales
+        # Dentro de edit_products_by_category, inicialización de temp_data
+        for idx, row in df_cat.iterrows():
+            # Leemos directamente el valor tal cual lo trae pandas
+            raw_factor = row.get("FACTOR", 1)
 
-        with st.form(key=f"form_{selected_category}"):
-            for index, row in df_cat.iterrows():
-                st.markdown(f"**Producto:** {row['PRODUCTO']} (Index={index})")
-                col1, col2, col3, col4, col5, col6 = st.columns([2,1,1,1,1,1])
+            # Si es un número muy grande (>10), asumimos que vino multiplicado x100
+            if isinstance(raw_factor, (int, float)):
+                if raw_factor > 10:
+                    factor0 = raw_factor / 100
+                else:
+                    factor0 = float(raw_factor)
+            else:
+                # tu parsing de cadena en caso venga como texto
+                s = str(raw_factor).strip().replace("$", "")
+                if "," in s:
+                    s = s.replace(".", "").replace(",", ".")
+                else:
+                    s = s.replace(".", "")
+                try:
+                    factor0 = float(s)
+                except:
+                    factor0 = 0000
+            
+            # Guardamos en temp_data para usarlo luego en los inputs
+            st.session_state.temp_data[idx] = {
+                "new_name": row.get("PRODUCTO", ""),
+                "new_costo": int(parse_moneda(row.get("COSTO", 0))),
+                "factor": factor0,
+                "new_brand": row.get("MARCA", ""),
+                "selected_stock": "SÍ" if str(row.get("STOCK", "")).strip() == "-" else "NO"
+            }
+            temp_data[idx] = st.session_state.temp_data[idx]
 
-                # Recuperamos los valores iniciales (ya cargados en temp_data)
-                initial = temp_data[index]
+        # 4) Formulario para editar la categoría
+        with st.form(key=f"form_{selected_category}", clear_on_submit=False):
+            for idx, row in df_cat.iterrows():
+                st.markdown(f"**Producto:** {row['PRODUCTO']}")
+                c1, c2, c3, c4, c5, c6 = st.columns([2,1,1,1,1,1])
+                init = temp_data[idx]
 
-                with col1:
+                # Nombre editable
+                with c1:
                     new_name = st.text_input(
-                        "Nombre", 
-                        value=initial["new_name"], 
-                        key=f"name_{index}"
+                        "Nombre",
+                        value=init["new_name"],
+                        key=f"name_{idx}"
                     )
-                with col2:
-                    new_price = st.number_input(
-                        "Precio", 
-                        value=initial["new_price"], 
-                        step=100.0, 
-                        key=f"precio_{index}"
-                    )
-                with col3:
-                    new_brand = st.text_input(
-                        "Marca", 
-                        value=initial["new_brand"], 
-                        key=f"marca_{index}"
-                    )
-                with col4:
+                # Costo (entero)
+                with c2:
                     new_costo = st.number_input(
-                        "Costo", 
-                        value=initial["new_costo"], 
-                        step=1.0, 
-                        key=f"costo_{index}"
+                        "Costo",
+                        value=init["new_costo"],
+                        min_value=0,
+                        step=1,
+                        format="%d",
+                        key=f"costo_{idx}"
                     )
-                with col5:
-                    stock_options = ["SÍ", "NO"]
-                    if initial["selected_stock"] == "SÍ":
-                        default_index = 0
-                    else:
-                        default_index = 1
+                # Factor (decimal)
+                with c3:
+                    factor = st.number_input(
+                        "Factor",
+                        value=init["factor"],
+                        min_value=0.0,
+                        step=0.01,
+                        format="%.2f",
+                        key=f"factor_{idx}"
+                    )
+                # Precio calculado (solo lectura, entero)
+                precio_calc = int(new_costo * factor)
+                with c4:
+                    st.number_input(
+                        "Precio",
+                        value=precio_calc,
+                        min_value=0,
+                        step=1,
+                        format="%d",
+                        disabled=True,
+                        key=f"precio_calc_{idx}"
+                    )
+                # Marca editable
+                with c5:
+                    new_brand = st.text_input(
+                        "Marca",
+                        value=init["new_brand"],
+                        key=f"marca_{idx}"
+                    )
+                # Stock
+                with c6:
+                    stock_opts = ["SÍ", "NO"]
+                    default_i = 0 if init["selected_stock"] == "SÍ" else 1
                     selected_stock = st.selectbox(
-                        "Stock", 
-                        stock_options, 
-                        index=default_index, 
-                        key=f"stock_{index}"
+                        "Stock",
+                        options=stock_opts,
+                        index=default_i,
+                        key=f"stock_{idx}"
                     )
-                
-                # Si la categoría es de MIX, creamos un form_submit_button para "Editar Mix"
-                mix_categories = {
-                    "MIX DE FRUTOS SECOS | FRUTAS DESECADAS| CEREALES"
-                }
-                with col6:
-                    if selected_category.upper().strip() in mix_categories:
-                        # Creamos un form_submit_button único para este producto
-                        button_mix_pressed[index] = st.form_submit_button(f"Editar Mix {index}")
 
-                # Guardamos los valores ingresados en temp_data (para persistirlos si se presiona otro botón)
-                temp_data[index] = {
+                # Actualizo temp_data local
+                temp_data[idx] = {
                     "new_name": new_name,
-                    "new_price": new_price,
-                    "new_brand": new_brand,
                     "new_costo": new_costo,
+                    "factor": factor,
+                    "new_brand": new_brand,
                     "selected_stock": selected_stock
                 }
 
-            # Botón global para guardar cambios de la categoría
             save_button = st.form_submit_button("Guardar cambios en esta categoría")
 
-        # Ahora, fuera del form, detectamos cuál botón fue presionado
-        # Actualizamos st.session_state.temp_data con los nuevos valores (para no perderlos en el rerun)
-        for idx in temp_data:
-            st.session_state.temp_data[idx] = temp_data[idx]
+        # 5) Sincronizar session_state con los cambios
+        st.session_state.temp_data.update(temp_data)
 
-        # 1) Chequeamos si se presionó alguno de los botones "Editar Mix ..."
-        mix_index_pressed = None
-        for idx, pressed in button_mix_pressed.items():
-            if pressed:
-                mix_index_pressed = idx
-                break  # Tomamos el primero que encontremos
+        # 6) Procesar guardado
+        if save_button:
 
-        if mix_index_pressed is not None:
-            # Se presionó "Editar Mix" para un producto en particular
-            st.session_state["mix_edit_index"] = mix_index_pressed
-            # NOTA: No guardamos cambios al DF. Solo iremos a configurar el mix.
-        
-        # 2) Chequeamos si se presionó "Guardar cambios en esta categoría"
-        elif save_button:
-            # Guardamos al DataFrame
-            for index, row in df_cat.iterrows():
-                changes = st.session_state.temp_data[index]
-                st.session_state.df.at[index, "PRODUCTO"] = changes["new_name"]
-                st.session_state.df.at[index, "PRECIO VENTA"] = changes["new_price"]
-                st.session_state.df.at[index, "MARCA"] = changes["new_brand"]
-                st.session_state.df.at[index, "COSTO"] = changes["new_costo"]
-                if changes["selected_stock"] == "SÍ":
-                    st.session_state.df.at[index, "STOCK"] = "-"
-                else:
-                    st.session_state.df.at[index, "STOCK"] = "0"
-            st.success(f"Cambios guardados para la categoría {selected_category}")
-            st.dataframe(st.session_state.df)
+            idxs = list(temp_data.keys())
+    
+            for idx, ch in temp_data.items():
+                st.session_state.df.at[idx, "PRODUCTO"] = ch["new_name"]
+                st.session_state.df.at[idx, "COSTO"] = ch["new_costo"]
+                st.session_state.df.at[idx, "PRECIO VENTA"] = int(ch["new_costo"] * ch["factor"])
+                st.session_state.df.at[idx, "FACTOR"]       = ch["factor"]
+                st.session_state.df.at[idx, "MARCA"] = ch["new_brand"]
+                st.session_state.df.at[idx, "STOCK"] = "-" if ch["selected_stock"] == "SÍ" else "0"
 
-        # Si se ha solicitado editar un mix para un producto, mostrar la UI especial
-        if "mix_edit_index" in st.session_state:
-            index_to_edit = st.session_state["mix_edit_index"]
-            self.configurar_mix(index_to_edit)
+                    # Sincronizamos la referencia local
+            self.df = st.session_state.df
 
-    def configurar_mix(self, index):
-        st.markdown("#### Configurar Mix para el Producto")
-        product_row = st.session_state.df.loc[index]
-        st.write("Producto:", product_row["PRODUCTO"])
-        st.write("Precio base (por kg):", product_row["PRECIO VENTA"])
-        
-        # Inicializamos (o reutilizamos) la lista de componentes de mix en session_state
-        if "mix_components_edit" not in st.session_state:
-            st.session_state.mix_components_edit = []
+            # 2) Limpiar el estado de los widgets para que al rerun tomen los nuevos valores
+            if "temp_data" in st.session_state:
+                del st.session_state["temp_data"]
 
-        st.info("Agrega los componentes que integrarán el mix (total de 1 kg).")
-        col1, col2 = st.columns(2)
-        with col1:
-            categorias = sorted(st.session_state.df["CATEGORIA"].astype(str).str.strip().unique())
-            comp_cat = st.selectbox("Categoría del componente", options=categorias, key=f"mix_comp_cat_{index}")
-        with col2:
-            df_comp = st.session_state.df[st.session_state.df["CATEGORIA"].astype(str).str.strip() == comp_cat]
-            prod_options = df_comp["PRODUCTO"].astype(str).unique().tolist()
-            comp_prod = st.selectbox("Producto del componente", options=prod_options, key=f"mix_comp_prod_{index}")
-        
-        comp_qty = st.number_input("Cantidad (g) para este componente", min_value=1, max_value=1000, value=250, key=f"mix_comp_qty_{index}")
-        if st.button("Agregar Componente", key=f"add_mix_comp_{index}"):
-            new_comp = {"Categoría": comp_cat, "Producto": comp_prod, "Cantidad (g)": comp_qty}
-            st.session_state.mix_components_edit.append(new_comp)
-            st.success("Componente agregado.")
-        
-        if st.session_state.mix_components_edit:
-            st.write("Componentes agregados:")
-            df_mix_comp = pd.DataFrame(st.session_state.mix_components_edit)
-            st.dataframe(df_mix_comp)
-            
-            # Calcular el precio del mix en tiempo real
-            total_subtotal = 0
-            for comp in st.session_state.mix_components_edit:
-                df_price = st.session_state.df[st.session_state.df["PRODUCTO"] == comp["Producto"]]
-                if not df_price.empty:
-                    precio_kg = float(df_price.iloc[0]["PRECIO VENTA"])
-                else:
-                    precio_kg = 0
-                total_subtotal += precio_kg * (comp["Cantidad (g)"] / 1000)
-            
-            factor = st.number_input("Factor de preparación", min_value=1.0, value=1.10, step=0.01, key=f"mix_factor_{index}")
-            precio_mix = total_subtotal * factor
-            st.markdown(f"**Precio Calculado del Mix: ARS {precio_mix:,.2f}**")
-            
-            if st.button("Guardar Precio de Mix", key=f"save_mix_{index}"):
-                st.session_state.df.at[index, "PRECIO VENTA"] = precio_mix
-                st.success("Precio actualizado en el producto.")
-                # Limpiamos la variable que indica que estamos editando este mix
-                st.session_state.pop("mix_edit_index")
-                st.session_state.mix_components_edit = []
+            mix_manager = MixManager(st.session_state.df)
+            mix_manager.recalc_all_mixes()
 
-if __name__ == "__main__":
-    # Normalmente no se ejecuta en multipage, pero queda como ejemplo
-    if "df" not in st.session_state:
-        st.session_state.df = pd.DataFrame(...)  # Carga tu DataFrame de ejemplo
-    editor = ProductEditor(st.session_state.df)
-    editor.edit_products_by_category()
+            for key in list(st.session_state.keys()):
+                if (
+                    key.startswith("name_")
+                    or key.startswith("costo_")
+                    or key.startswith("factor_")
+                    or key.startswith("marca_")
+                    or key.startswith("stock_")
+                ):
+                    del st.session_state[key]
+
+            # 3) Mostrar confirmación y catálogo actualizado
+            st.success(f"Cambios guardados para '{selected_category}'.")
+            st.dataframe(self.df)
+
+            # 4) Salir para forzar un rerun natural y recargar los inputs
+            return
