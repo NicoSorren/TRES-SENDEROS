@@ -6,6 +6,12 @@ import datetime
 from sheet_connector import SheetConnector
 import altair as alt
 
+st.set_page_config(
+    page_title="Dashboard de Ventas",
+    layout="wide",          # <- usa todo el ancho de pantalla
+    initial_sidebar_state="expanded"
+)
+
 
 SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1i4kafAJQvVkKbkVIo5LldsN7R-ApeWhHDKZjBvsguoo/edit?gid=0#gid=0"
 
