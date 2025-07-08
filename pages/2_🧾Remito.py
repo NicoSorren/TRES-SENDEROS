@@ -9,12 +9,16 @@ import streamlit as st
 import pandas as pd
 import datetime
 from io import BytesIO
+import re
 
 from invoice_manager import InvoiceManager
 from sheet_connector import SheetConnector  # reusa tu conector existente
+from validation import validate_client_data, normalize_phone
+
 
 # Copiamos la misma URL que definiste en Gestionar_Productos.py
 SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1i4kafAJQvVkKbkVIo5LldsN7R-ApeWhHDKZjBvsguoo/edit?gid=0#gid=0"
+
 
 def remito_integration_page():
     st.title("Generar Remito con Gestión de Clientes")
@@ -178,24 +182,56 @@ def remito_integration_page():
             st.text_input("ID Cliente", value=cli_id, disabled=True)
             nombre    = st.text_input("Nombre", key="nuevo_nombre")
             direccion = st.text_input("Dirección", key="nuevo_direccion")
-            telefono  = st.text_input("Teléfono", key="nuevo_telefono")
-            email     = st.text_input("Email", key="nuevo_email")
-            obs       = st.text_area("Observaciones", key="nuevo_obs")
+
+            # Prefijo fijo +54 9; el usuario teclea sólo el resto
+            st.markdown("**Número de teléfono**: +54 9 *", unsafe_allow_html=True)
+            telefono_local = st.text_input(
+                "Sólo dígitos después de +54 9",
+                placeholder="2615112106",
+                key="nuevo_telefono",
+                help="Ejemplo: para +54 9 261 511-2106 escribe 2615112106"
+            )
+
+            email = st.text_input("Email", key="nuevo_email")
+            obs   = st.text_area("Observaciones", key="nuevo_obs")
 
             add_cli = st.form_submit_button("Agregar Cliente")
 
         if add_cli:
+            # 1) Verificar que puso algo en teléfono
+            if not telefono_local:
+                st.error("El teléfono es obligatorio.")
+                st.stop()
+
+            if not direccion:
+                st.error("La dirección es obligatoria")
+                st.stop()
+
+            # 2) Normalizar y validar formato E.164
+            raw_phone = f"+549{telefono_local}"
+            normalized_phone = normalize_phone(raw_phone)
+            if not normalized_phone:
+                st.error("Número inválido. Revisa que sean sólo dígitos y 10–11 caracteres tras +54 9.")
+                st.stop()
+
+            # 3) Armar datos y validarlos
             client_data = {
                 "ID CLIENTE":    cli_id,
                 "NOMBRE":        nombre,
                 "DIRECCION":     direccion,
-                "TELEFONO":      telefono,
+                "TELEFONO":      normalized_phone,
                 "EMAIL":         email,
                 "OBSERVACIONES": obs
             }
-            connector.add_client(client_data)
-            st.success(f"Cliente {cli_id} “{nombre}” agregado correctamente.")
-            st.session_state["cliente_nuevo"] = client_data
+            errors = validate_client_data(client_data)
+            if errors:
+                for field, msg in errors.items():
+                    st.error(f"{field}: {msg}")
+            else:
+                connector.add_client(client_data)
+                st.success(f"Cliente {cli_id} \"{nombre}\" agregado correctamente.")
+                st.session_state["cliente_nuevo"] = client_data
+
 
         # Si ya agregaste, recuperas de session_state
         if st.session_state.get("cliente_nuevo"):
@@ -217,11 +253,19 @@ def remito_integration_page():
 
         generate_submitted = st.form_submit_button("Generar Remito")
         if generate_submitted:
-            # Si es cliente nuevo, guardamos antes de generar  ← GUARDAR CLIENTE
-            if modo_cliente == "Nuevo" and client_data["NOMBRE"].strip():
-                connector.add_client(client_data)
-                st.success(f"Cliente [{client_data['ID CLIENTE']}] '{client_data['NOMBRE']}' guardado.")
+            
+            # C) Validaciones previas
+            rem_errors = []
+            items = st.session_state.get("remito_items", [])
+            if not items:
+                rem_errors.append("El remito debe tener al menos un artículo.")
+            if not (0 <= discount_percent <= 100):
+                rem_errors.append("El descuento global debe estar entre 0 y 100 %.")
 
+            if rem_errors:
+                for msg in rem_errors:
+                    st.error(msg)
+                st.stop()
             # Recalculamos subtotal y descuento
             items_df       = pd.DataFrame(st.session_state["remito_items"] or [])
             subtotal       = items_df["Subtotal"].sum() if not items_df.empty else 0
@@ -269,8 +313,11 @@ def remito_integration_page():
                     if "(" in articulo and articulo.endswith(")"):
                         prod_name, frac = articulo.rsplit(" (", 1)
                         frac = frac[:-1]  # quitar ) final
-                        if frac.endswith("g"):
-                            grams = float(frac.rstrip("g"))
+                        if frac.lower().endswith("kg"):
+                            kilos  = float(frac[:-2])
+                            factor = kilos
+                        elif frac.lower().endswith("g"):
+                            grams  = float(frac[:-1])
                             factor = grams / 1000.0
                         else:
                             factor = 1.0
