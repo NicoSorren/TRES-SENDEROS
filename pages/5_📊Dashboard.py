@@ -62,12 +62,22 @@ def load_all_data(url: str):
 
 def show_kpis(df_rem: pd.DataFrame, df_cli: pd.DataFrame):
     now = pd.Timestamp.now()
-    total_rev   = df_rem["TOTAL FACTURADO"].sum()
-    rem_mes     = df_rem[
+
+    # Facturación total histórica
+    total_rev = df_rem["TOTAL FACTURADO"].sum()
+
+    # Remitos y ticket promedio del mes actual
+    this_month = df_rem[
         (df_rem["FECHA"].dt.year  == now.year) &
         (df_rem["FECHA"].dt.month == now.month)
-    ].shape[0]
-    ticket_prom = df_rem["TOTAL FACTURADO"].mean() or 0
+    ]
+    rem_mes     = this_month.shape[0]
+    ticket_prom = this_month["TOTAL FACTURADO"].mean() or 0
+
+    # Ganancia del mes actual
+    gan_mes = this_month["GANANCIA"].sum()
+
+    # Clientes nuevos del mes actual
     nuevos = 0
     if "FECHA_ALTA" in df_cli.columns:
         nuevos = df_cli[
@@ -75,13 +85,14 @@ def show_kpis(df_rem: pd.DataFrame, df_cli: pd.DataFrame):
             (df_cli["FECHA_ALTA"].dt.month == now.month)
         ].shape[0]
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("💰 Facturación total", f"${total_rev:,.2f}")
-    c2.metric("📦 Remitos este mes", rem_mes)
-    c3.metric("🎟️ Ticket promedio", f"${ticket_prom:,.2f}")
-    c4.metric("🆕 Clientes nuevos", nuevos)
+    # Mostramos cinco métricas
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("💰 Facturación total",      f"${total_rev:,.2f}")
+    c2.metric("📦 Remitos este mes",        rem_mes)
+    c3.metric("🎟️ Ticket promedio",       f"${ticket_prom:,.2f}")
+    c4.metric("💵 Ganancia este mes",      f"${gan_mes:,.2f}")
+    c5.metric("🆕 Clientes nuevos",        nuevos)
 
-import pandas as pd  # asegúrate de tener esto importado
 
 def show_monthly_trend(df_rem: pd.DataFrame):
     st.markdown("---")
