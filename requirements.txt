@@ -5,3 +5,5 @@ pandas
 openpyxl
 altair
 phonenumbers
+reportlab
+pywin32

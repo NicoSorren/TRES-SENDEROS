@@ -2,9 +2,23 @@
 import pandas as pd
 from io import BytesIO
 from openpyxl.styles import Alignment, Font, PatternFill
+import tempfile
+import subprocess
+from datetime import date
+import shutil
+import os
+import win32com.client
+import pythoncom
 
 # Importamos las funciones de cálculo unificado (asegúrate de tener este módulo implementado)
 from price_calculator import compute_fraction_price, convertir_a_gramos
+
+_MONTHS = {
+    1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL",
+    5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO",
+    9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE", 12: "DICIEMBRE"
+}
+
 
 def format_price(num):
     """
@@ -163,6 +177,7 @@ def generar_lista_precios_df(df):
     
     df_out = pd.DataFrame(output_rows, columns=["CATEGORIA / PRODUCTO", "COL B", "COL C", "COL D", "COL E"])
     return df_out, row_types
+    
 
 # Definición de estilos para el Excel
 fill_row1 = PatternFill("solid", fgColor="FFcccccc")  
@@ -180,14 +195,20 @@ font_row4 = Font(name="Oswald", size=10, bold=True, color="FF2c2c4d")
 fill_green  = PatternFill("solid", fgColor="FF93C47D")  # Verde para categorías
 font_category = Font(name="Oswald", size=11, bold=True, color="FF000000")  
 font_product  = Font(name="Candara", size=11, color="FF595959")            
-font_price    = Font(name="Candara", size=12, color="FF595959")            
+font_price    = Font(name="Candara", size=12, color="FF595959")  
 
-def crear_excel_con_estilo(df_out, row_types, title="LISTA DE PRECIOS FEBRERO 2025"):
+def crear_excel_con_estilo(df_out, row_types, title: str | None = None) -> BytesIO:
     """
     Crea un archivo Excel en memoria con el DataFrame generado y
     aplica estilos a las primeras filas y a la tabla.
     Retorna un objeto BytesIO con el contenido del Excel.
     """
+    # 1) Si no recibimos título, lo construimos dinámicamente
+    if title is None:
+        hoy = date.today()
+        mes = _MONTHS[hoy.month]
+        title = f"LISTA DE PRECIOS {mes} {hoy.year}"
+
     output = BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         # Escribimos el DataFrame a partir de la fila 5 (índice 4)
@@ -255,6 +276,109 @@ def crear_excel_con_estilo(df_out, row_types, title="LISTA DE PRECIOS FEBRERO 20
             for col_idx in range(1, 6):
                 cell = ws.cell(row=row_idx, column=col_idx)
                 cell.alignment = Alignment(wrap_text=True, vertical="top")
-    
+
+            # Número de la fila en la que acabamos de escribir datos
+        last = ws.max_row + 1
+
+        # Merge de A:last hasta E:last para un solo bloque
+        ws.merge_cells(start_row=last, start_column=1, end_row=last, end_column=5)
+
+        # Celda principal tras el merge
+        cel = ws.cell(row=last, column=1)
+        cel.value = "MENDOZA - ARGENTINA"
+
+        # Estilo igual que fila de categoría
+        cel.fill      = fill_green      # mismo relleno verde
+        cel.font      = font_category   # misma fuente bold
+        cel.alignment = Alignment(
+            horizontal="center",
+            vertical="center"
+        )
+
+        # Si quieres que la fila tenga altura fija, opcional:
+        ws.row_dimensions[last].height = 20
+        
+
     output.seek(0)
     return output
+
+def excel_to_pdf(excel_buffer: BytesIO) -> BytesIO:
+    """
+    Convierte un BytesIO con un .xlsx a un BytesIO con el PDF
+    usando la automatización de MS Excel via COM en Windows.
+    Ajusta área de impresión, orienta en apaisado y fuerza FitToPageWide=1.
+    """
+    tmp_dir = tempfile.mkdtemp(prefix="lp_")
+    excel = None
+
+    try:
+        # --- 1) Grabar el XLSX al disco ---
+        xlsx_path = os.path.join(tmp_dir, "lista_precios.xlsx")
+        pdf_path  = os.path.join(tmp_dir, "lista_precios.pdf")
+        with open(xlsx_path, "wb") as f:
+            f.write(excel_buffer.getvalue())
+
+        # --- 2) Inicializar COM ---
+        pythoncom.CoInitialize()
+
+        # --- 3) Iniciar Excel en background ---
+        excel = win32com.client.DispatchEx("Excel.Application")
+        # Suprimir alertas
+        try:
+            excel.DisplayAlerts = False
+        except Exception:
+            pass
+
+        # --- 4) Abrir workbook con argumentos nombrados ---
+        wb = excel.Workbooks.Open(
+            Filename=os.path.abspath(xlsx_path),
+            UpdateLinks=0,
+            ReadOnly=True
+        )
+        ws = wb.Worksheets(1)
+
+        # --- 5) Ajustar área de impresión ---
+        ws.PageSetup.PrintArea = ""  # limpia
+        used = ws.UsedRange
+        ws.PageSetup.PrintArea = used.Address
+
+        # --- 6) Configuración de página ---
+        const = win32com.client.constants
+        ws.PageSetup.Orientation    = 2
+        ws.PageSetup.Zoom           = False
+        ws.PageSetup.FitToPagesWide = 1
+        ws.PageSetup.FitToPagesTall = False
+
+        # --- 7) Exportar a PDF ---
+        wb.ExportAsFixedFormat(
+            Type=0,                # 0 = PDF
+            Filename=os.path.abspath(pdf_path),
+            Quality=0,             # estándar
+            IncludeDocProperties=True,
+            IgnorePrintAreas=False
+        )
+        wb.Close(SaveChanges=False)
+
+        # --- 8) Leer PDF y devolver BytesIO ---
+        with open(pdf_path, "rb") as f:
+            pdf_bytes = f.read()
+        return BytesIO(pdf_bytes)
+
+    except pythoncom.com_error as com_err:
+        # Error COM: lo reportamos con detalle
+        raise RuntimeError(f"Error de COM al procesar el Excel: {com_err}") from com_err
+
+    finally:
+        # --- 9) Cerrar Excel y liberar COM ---
+        if excel:
+            try:
+                excel.Quit()
+            except Exception:
+                pass
+        try:
+            pythoncom.CoUninitialize()
+        except Exception:
+            pass
+
+        # --- 10) Eliminar temporales ---
+        shutil.rmtree(tmp_dir, ignore_errors=True)
