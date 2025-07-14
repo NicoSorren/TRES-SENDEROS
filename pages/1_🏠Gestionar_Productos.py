@@ -10,6 +10,7 @@ from product_editor import ProductEditor
 from product_manager import ProductManager
 from category_manager import CategoryManager
 from mix_manager import MixManager
+import sku_generator
 
 # Configuración general de la página
 st.set_page_config(
@@ -32,6 +33,20 @@ df = get_data_from_sheet(SPREADSHEET_URL)
 
 if "df" not in st.session_state:
     st.session_state.df = df.copy()
+
+# 1.a) Si la columna ACTIVO no existía, la inicializo en "Si"
+if "ACTIVO" not in st.session_state.df.columns:
+    st.session_state.df["ACTIVO"] = "Si"
+
+# 1.b) Me quedo sólo con los productos activos
+st.session_state.df = st.session_state.df[
+    st.session_state.df["ACTIVO"].astype(str).str.upper() == "SI"
+].reset_index(drop=True)
+
+# Refresco tu instancia local
+df = st.session_state.df
+
+sku_generator.init_existing_skus(st.session_state.df)
 
 mix_manager = MixManager(st.session_state.df)
 

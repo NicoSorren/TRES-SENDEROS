@@ -35,7 +35,9 @@ class MixManager:
                     continue
                 total_cost += float(uc.iloc[0]) * (grams / 1000.0)
             factor = row.get('FACTOR', self.default_factor) or self.default_factor
-            price = round(total_cost * factor, 2)
+            factor_float = float(factor)           
+            price = round(total_cost * factor_float, 2)
+                
             self.df.at[idx, 'COSTO'] = int(round(total_cost))
             self.df.at[idx, 'PRECIO VENTA'] = price
 

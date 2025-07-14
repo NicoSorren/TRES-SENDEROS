@@ -100,84 +100,95 @@ def generar_lista_precios_df(df):
         output_rows.append(header)
         row_types.append("category")
         
-        # Filas para cada producto
-        for _, row in group.iterrows():
-            prod = row["PRODUCTO"]
-            tipo = str(row["KG / UNIDAD"]).strip().upper()
-            try:
-                precio_base = float(row["PRECIO VENTA"])
-            except:
-                precio_base = 0.0
-            marca = str(row["MARCA"]).strip() if pd.notna(row["MARCA"]) else ""
-            
-            # Iniciamos la fila con: [Producto, COL B, COL C, COL D, Marca]
-            prod_row = [prod, "", "", "", marca]
-            
-            # Verificar el stock: '-' indica stock disponible; "0" indica sin stock.
-            stock_val = str(row["STOCK"]).strip()
-            if stock_val == "0":
-                # Producto sin stock: se reemplazan las casillas de precio por "SIN STOCK"
-                if tipo == "UNIDAD":
-                    prod_row[3] = "SIN STOCK"
-                elif tipo == "KG":
-                    # Para KG, independientemente de la cantidad de fraccionamientos esperados,
-                    # rellenamos las columnas destinadas a precios (indices 1,2 y 3) con "SIN STOCK"
-                    prod_row[1] = "SIN STOCK"
-                    prod_row[2] = "SIN STOCK"
-                    prod_row[3] = "SIN STOCK"
-            else:
-                # Si hay stock, se procede a calcular los precios.
-                if tipo == "UNIDAD":
-                    prod_row[3] = format_price(int(round(precio_base)))
-                elif tipo == "KG":
-                    frac_raw = row["FRACCIONAMIENTO"]
-                    frac_str = str(frac_raw).strip() if pd.notna(frac_raw) else ""
-                    if not frac_str:
-                        print(f"ADVERTENCIA: El producto '{prod}' (categoría '{cat}') no tiene fraccionamiento.")
+        raw = group["SUBCATEGORIA"].dropna().astype(str).str.strip()
+        subcats = [s for s in raw.unique().tolist() if s]
+
+        if subcats:
+            for sub in subcats:
+                # Cabecera de subcategoría
+                output_rows.append([f"– {sub}", "", "", "", ""])
+                row_types.append("subcategory")
+
+                # Productos de esta subcategoría
+                df_sub = group[
+                    group["SUBCATEGORIA"].fillna("").astype(str).str.strip() == sub
+                ]
+                for _, row in df_sub.iterrows():
+                    prod = row["PRODUCTO"]
+                    tipo = str(row["KG / UNIDAD"]).strip().upper()
+                    try:
+                        precio_base = float(row["PRECIO VENTA"])
+                    except:
+                        precio_base = 0.0
+                    marca = str(row["MARCA"]).strip() if pd.notna(row["MARCA"]) else ""
+                    
+                    # Iniciamos la fila con: [Producto, COL B, COL C, COL D, Marca]
+                    prod_row = [prod, "", "", "", marca]
+                    
+                    # Verificar el stock: '-' indica stock disponible; "0" indica sin stock.
+                    stock_val = str(row["STOCK"]).strip()
+                    if stock_val == "0":
+                        # Producto sin stock: se reemplazan las casillas de precio por "SIN STOCK"
+                        if tipo == "UNIDAD":
+                            prod_row[3] = "SIN STOCK"
+                        elif tipo == "KG":
+                            # Para KG, independientemente de la cantidad de fraccionamientos esperados,
+                            # rellenamos las columnas destinadas a precios (indices 1,2 y 3) con "SIN STOCK"
+                            prod_row[1] = "SIN STOCK"
+                            prod_row[2] = "SIN STOCK"
+                            prod_row[3] = "SIN STOCK"
                     else:
-                        fracs = [x.strip() for x in frac_str.split(",") if x.strip()]
-                        if is_mixed and len(fracs) > 2:
-                            print(f"ADVERTENCIA: El producto '{prod}' (categoría '{cat}') tiene más de 2 fraccionamientos: {fracs}.")
-                            fracs = fracs[:2]
-                        elif is_pure_kg and len(fracs) > 3:
-                            print(f"ADVERTENCIA: El producto '{prod}' (categoría '{cat}') tiene más de 3 fraccionamientos: {fracs}.")
-                            fracs = fracs[:3]
-                        fracs_sorted = sorted(
-                            fracs,
-                            key=lambda x: convertir_a_gramos(x) if convertir_a_gramos(x) is not None else 0
-                        )
-                        
-                        precios = []
-                        for frac in fracs_sorted:
-                            p = compute_fraction_price(tipo, precio_base, frac)
-                            if p is not None:
-                                precios.append(format_price(int(round(p))))
+                        # Si hay stock, se procede a calcular los precios.
+                        if tipo == "UNIDAD":
+                            prod_row[3] = format_price(int(round(precio_base)))
+                        elif tipo == "KG":
+                            frac_raw = row["FRACCIONAMIENTO"]
+                            frac_str = str(frac_raw).strip() if pd.notna(frac_raw) else ""
+                            if not frac_str:
+                                print(f"ADVERTENCIA: El producto '{prod}' (categoría '{cat}') no tiene fraccionamiento.")
                             else:
-                                precios.append("")
-                        
-                        if is_mixed:
-                            if len(precios) == 1:
-                                prod_row[2] = precios[0]
-                            elif len(precios) == 2:
-                                prod_row[1] = precios[0]
-                                prod_row[2] = precios[1]
-                        else:
-                            if len(precios) == 1:
-                                prod_row[3] = precios[0]
-                            elif len(precios) == 2:
-                                prod_row[2] = precios[0]
-                                prod_row[3] = precios[1]
-                            elif len(precios) >= 3:
-                                prod_row[1] = precios[0]
-                                prod_row[2] = precios[1]
-                                prod_row[3] = precios[2]
-            
-            output_rows.append(prod_row)
-            row_types.append("product")
-    
+                                fracs = [x.strip() for x in frac_str.split(",") if x.strip()]
+                                if is_mixed and len(fracs) > 2:
+                                    print(f"ADVERTENCIA: El producto '{prod}' (categoría '{cat}') tiene más de 2 fraccionamientos: {fracs}.")
+                                    fracs = fracs[:2]
+                                elif is_pure_kg and len(fracs) > 3:
+                                    print(f"ADVERTENCIA: El producto '{prod}' (categoría '{cat}') tiene más de 3 fraccionamientos: {fracs}.")
+                                    fracs = fracs[:3]
+                                fracs_sorted = sorted(
+                                    fracs,
+                                    key=lambda x: convertir_a_gramos(x) if convertir_a_gramos(x) is not None else 0
+                                )
+                                
+                                precios = []
+                                for frac in fracs_sorted:
+                                    p = compute_fraction_price(tipo, precio_base, frac)
+                                    if p is not None:
+                                        precios.append(format_price(int(round(p))))
+                                    else:
+                                        precios.append("")
+                                
+                                if is_mixed:
+                                    if len(precios) == 1:
+                                        prod_row[2] = precios[0]
+                                    elif len(precios) == 2:
+                                        prod_row[1] = precios[0]
+                                        prod_row[2] = precios[1]
+                                else:
+                                    if len(precios) == 1:
+                                        prod_row[3] = precios[0]
+                                    elif len(precios) == 2:
+                                        prod_row[2] = precios[0]
+                                        prod_row[3] = precios[1]
+                                    elif len(precios) >= 3:
+                                        prod_row[1] = precios[0]
+                                        prod_row[2] = precios[1]
+                                        prod_row[3] = precios[2]
+                    
+                    output_rows.append(prod_row)
+                    row_types.append("product")
+        
     df_out = pd.DataFrame(output_rows, columns=["CATEGORIA / PRODUCTO", "COL B", "COL C", "COL D", "COL E"])
     return df_out, row_types
-    
 
 # Definición de estilos para el Excel
 fill_row1 = PatternFill("solid", fgColor="FFcccccc")  
@@ -255,13 +266,25 @@ def crear_excel_con_estilo(df_out, row_types, title: str | None = None) -> Bytes
         
         # Aplicar estilo a las filas de la tabla (desde la fila 5 en adelante)
         for i, rtype in enumerate(row_types):
-            excel_row = i + 5  # La primera fila de la tabla es la 5
+            excel_row = i + 5
             if rtype == "category":
                 for col in range(1, 6):
                     cell = ws.cell(row=excel_row, column=col)
                     cell.fill = fill_green
                     cell.font = font_category
+
+            elif rtype == "subcategory":
+                # Subcategoría: fondo gris claro + cursiva + sangría en Col A
+                cell = ws.cell(row=excel_row, column=1)
+                cell.fill = PatternFill(fill_type="solid", fgColor="DDDDDD")
+                cell.font = Font(italic=True)
+                cell.alignment = Alignment(indent=1, wrap_text=True, vertical="top")
+                # Limpio relleno en el resto de columnas
+                for col in range(2, 6):
+                    ws.cell(row=excel_row, column=col).fill = PatternFill(fill_type=None)
+
             else:
+                # producto
                 ws.cell(row=excel_row, column=1).font = font_product
                 ws.cell(row=excel_row, column=5).font = font_product
                 for col in [2, 3, 4]:
