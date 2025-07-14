@@ -6,4 +6,4 @@ openpyxl
 altair
 phonenumbers
 reportlab
-pywin32
+#pywin32
