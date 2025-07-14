@@ -11,7 +11,7 @@ from product_manager import ProductManager
 from category_manager import CategoryManager
 from mix_manager import MixManager
 import sku_generator
-
+from descripcion import edit_descriptions
 # Configuración general de la página
 st.set_page_config(
     page_title="Tres Senderos",
@@ -52,7 +52,7 @@ mix_manager = MixManager(st.session_state.df)
 
 st.header("Datos Cargados desde Google Sheets")
 st.subheader("Funcionalidades de Gestión de Productos")
-tabs = st.tabs(["Editar Productos", "Agregar Producto", "Eliminar Producto", "Gestionar Categorías", "MIXES"])
+tabs = st.tabs(["Editar Productos", "Agregar Producto", "Eliminar Producto", "Gestionar Categorías", "MIXES", "Descripción de Productos"])
 
 with tabs[0]:
     st.header("Editar Productos")
@@ -77,6 +77,10 @@ with tabs[3]:
 with tabs[4]:
     mix_manager = MixManager(st.session_state.df)
     mix_manager.manage_mixes()
+
+with tabs[5]:
+    st.header("Descripción de Productos")
+    edit_descriptions()
 
 @st.cache_resource(show_spinner=False)
 def get_executor():

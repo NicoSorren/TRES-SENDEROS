@@ -106,7 +106,7 @@ def generar_lista_precios_df(df):
         if subcats:
             for sub in subcats:
                 # Cabecera de subcategoría
-                output_rows.append([f"– {sub}", "", "", "", ""])
+                output_rows.append([f"{sub}", "", "", "", ""])
                 row_types.append("subcategory")
 
                 # Productos de esta subcategoría
@@ -186,6 +186,69 @@ def generar_lista_precios_df(df):
                     
                     output_rows.append(prod_row)
                     row_types.append("product")
+        else:
+            # Productos sin subcategoría: los listamos todos de la categoría directamente
+            for _, row in group.iterrows():
+                prod = row["PRODUCTO"]
+                tipo = str(row["KG / UNIDAD"]).strip().upper()
+                try:
+                    precio_base = float(row["PRECIO VENTA"])
+                except:
+                    precio_base = 0.0
+                marca = str(row["MARCA"]).strip() if pd.notna(row["MARCA"]) else ""
+
+                # Fila inicial: [Producto, COL B, COL C, COL D, Marca]
+                prod_row = [prod, "", "", "", marca]
+
+                stock_val = str(row["STOCK"]).strip()
+                if stock_val == "0":
+                    # Sin stock: marcamos todas las columnas de precio según el tipo
+                    if tipo == "UNIDAD":
+                        prod_row[3] = "SIN STOCK"
+                    elif tipo == "KG":
+                        prod_row[1] = prod_row[2] = prod_row[3] = "SIN STOCK"
+                else:
+                    # Con stock: calculamos precios por fracción
+                    if tipo == "UNIDAD":
+                        prod_row[3] = format_price(int(round(precio_base)))
+                    elif tipo == "KG":
+                        frac_raw = row["FRACCIONAMIENTO"]
+                        frac_str = str(frac_raw).strip() if pd.notna(frac_raw) else ""
+                        if not frac_str:
+                            print(f"ADVERTENCIA: El producto '{prod}' (categoría '{cat}') no tiene fraccionamiento.")
+                        else:
+                            # Preparamos lista de fracciones y la limitamos
+                            fracs = [x.strip() for x in frac_str.split(",") if x.strip()]
+                            if is_mixed and len(fracs) > 2:
+                                fracs = fracs[:2]
+                            elif is_pure_kg and len(fracs) > 3:
+                                fracs = fracs[:3]
+                            # Ordenamos por tamaño (gramos)
+                            fracs_sorted = sorted(fracs, key=lambda x: convertir_a_gramos(x) or 0)
+
+                            # Calculamos cada precio de fracción
+                            precios = []
+                            for frac in fracs_sorted:
+                                p = compute_fraction_price(tipo, precio_base, frac)
+                                precios.append(format_price(int(round(p))) if p is not None else "")
+
+                            # Asignamos según pureza/mixto
+                            if is_mixed:
+                                if len(precios) == 1:
+                                    prod_row[2] = precios[0]
+                                elif len(precios) == 2:
+                                    prod_row[1], prod_row[2] = precios
+                            else:
+                                if len(precios) == 1:
+                                    prod_row[3] = precios[0]
+                                elif len(precios) == 2:
+                                    prod_row[2], prod_row[3] = precios
+                                elif len(precios) >= 3:
+                                    prod_row[1], prod_row[2], prod_row[3] = precios[:3]
+
+                output_rows.append(prod_row)
+                row_types.append("product")
+
         
     df_out = pd.DataFrame(output_rows, columns=["CATEGORIA / PRODUCTO", "COL B", "COL C", "COL D", "COL E"])
     return df_out, row_types
@@ -274,14 +337,13 @@ def crear_excel_con_estilo(df_out, row_types, title: str | None = None) -> Bytes
                     cell.font = font_category
 
             elif rtype == "subcategory":
-                # Subcategoría: fondo gris claro + cursiva + sangría en Col A
-                cell = ws.cell(row=excel_row, column=1)
-                cell.fill = PatternFill(fill_type="solid", fgColor="DDDDDD")
-                cell.font = Font(italic=True)
-                cell.alignment = Alignment(indent=1, wrap_text=True, vertical="top")
-                # Limpio relleno en el resto de columnas
-                for col in range(2, 6):
-                    ws.cell(row=excel_row, column=col).fill = PatternFill(fill_type=None)
+                for col in range(1, 6):
+                    cell = ws.cell(row=excel_row, column=col)
+                    cell.fill = PatternFill(fill_type="solid", fgColor="C5E1A5")
+                # Estilo adicional para la columna A
+                a = ws.cell(row=excel_row, column=1)
+                a.font = Font(italic=True)
+                a.alignment = Alignment(indent=1, wrap_text=True, vertical="top")
 
             else:
                 # producto
