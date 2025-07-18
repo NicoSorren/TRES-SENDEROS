@@ -1,17 +1,16 @@
 import time
 import streamlit as st
 import pandas as pd
-import concurrent.futures
 from PIL import Image
 from mix_manager import MixManager
 
-from sheet_connector import get_data_from_sheet, update_spreadsheet
+from sheet_connector import update_spreadsheet
 from product_editor import ProductEditor
 from product_manager import ProductManager
 from category_manager import CategoryManager
-from mix_manager import MixManager
-import sku_generator
 from descripcion import edit_descriptions
+from fudo_manager import build_export_df, upload_export_df
+
 # Configuración general de la página
 st.set_page_config(
     page_title="Tres Senderos",
@@ -28,23 +27,25 @@ st.sidebar.image(logo, width=80)
 st.title("Gestión de Productos")
 
 SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1i4kafAJQvVkKbkVIo5LldsN7R-ApeWhHDKZjBvsguoo/edit?gid=0#gid=0"
+FUDO_URL       = "https://docs.google.com/spreadsheets/d/1xLmOA76L2xwnh0LUfLH813B35Md7cRXdmFCfPMKNxU8/edit"
 
-df = get_data_from_sheet(SPREADSHEET_URL)
+# ————— 1️⃣ Datos en sesión (cargados en PRINCIPAL.py) —————
+df_master = st.session_state.df          # tu hoja maestra
+df_fudo   = st.session_state.df_fudo     # el sheet Productos de Fudo
 
-if "df" not in st.session_state:
-    st.session_state.df = df.copy()
+# 1.a) Inicializar/filtrar activos en el master (igual que antes)
+if "ACTIVO" not in df_master.columns:
+    df_master["ACTIVO"] = "Si"
 
-# 1.a) Si la columna ACTIVO no existía, la inicializo en "Si"
-if "ACTIVO" not in st.session_state.df.columns:
-    st.session_state.df["ACTIVO"] = "Si"
-
-# 1.b) Me quedo sólo con los productos activos
-st.session_state.df = st.session_state.df[
-    st.session_state.df["ACTIVO"].astype(str).str.upper() == "SI"
+df_master = df_master[
+    df_master["ACTIVO"].astype(str).str.upper() == "SI"
 ].reset_index(drop=True)
 
-# Refresco tu instancia local
-df = st.session_state.df
+# Refresco la instancia local
+st.session_state.df = df_master
+
+
+import sku_generator
 
 sku_generator.init_existing_skus(st.session_state.df)
 
@@ -82,16 +83,20 @@ with tabs[5]:
     st.header("Descripción de Productos")
     edit_descriptions()
 
-@st.cache_resource(show_spinner=False)
-def get_executor():
-    return concurrent.futures.ProcessPoolExecutor(max_workers=1)
 
 st.write("---")
 st.write("No olvidar presionar botón de debajo para confirmar TODOS los cambios")
 st.write("No es necesario que sea luego de modificar, agregar o eliminar cada producto. Puede hacerse al FINAL de hacerse todos los cambios que uno quiera")
-if st.button("CONFIRMAR CAMBIOS A BASE DE DATOS"):   
-    with st.spinner("Actualizando la hoja de cálculo en segundo plano..."):
-        executor = get_executor()
-        future = executor.submit(update_spreadsheet, SPREADSHEET_URL, st.session_state.df)
-        st.success("La actualización se inició en un proceso separado.")
+if st.button("CONFIRMAR CAMBIOS A BASE DE DATOS", key="confirm_changes"):
+    with st.spinner("Sincronizando Maestro y Fudo..."):
+        # a) Actualizar Google Sheet maestro
+        update_spreadsheet(SPREADSHEET_URL, st.session_state.df)
 
+        # b) Generar DataFrame de exportación y subir al Sheet de Fudo
+        df_export = build_export_df(SPREADSHEET_URL, FUDO_URL)
+        upload_export_df(df_export, FUDO_URL)
+
+        # c) Refrescar preview en sesión
+        st.session_state.df_fudo = df_export.copy()
+
+    st.success("✅ Maestro y Fudo sincronizados correctamente.")

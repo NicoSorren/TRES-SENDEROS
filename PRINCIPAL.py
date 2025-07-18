@@ -4,6 +4,23 @@ import streamlit as st
 from PIL import Image
 from datetime import date
 
+# PRINCIPAL.py (arriba del todo, tras los imports)  
+from sheet_connector import get_data_from_sheet  
+from fudo_manager import SheetConnector  # o, si prefieres, importa get_products directo  
+
+SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1i4kafAJQvVkKbkVIo5LldsN7R-ApeWhHDKZjBvsguoo/edit"
+FUDO_URL       = "https://docs.google.com/spreadsheets/d/1xLmOA76L2xwnh0LUfLH813B35Md7cRXdmFCfPMKNxU8/edit"  
+
+# 1) Cargar hoja MAESTRA una única vez en sesión
+if "df" not in st.session_state:
+    df_master = get_data_from_sheet(SPREADSHEET_URL)
+    st.session_state.df = df_master.copy()
+
+# 2) Cargar hoja de FUDO una única vez en sesión
+if "df_fudo" not in st.session_state:
+    fudo_conn = SheetConnector(FUDO_URL)
+    st.session_state.df_fudo = fudo_conn.get_products().copy()
+    
 # 1) Configuración de la página
 st.set_page_config(
     page_title="Tres Senderos – Bienvenida",

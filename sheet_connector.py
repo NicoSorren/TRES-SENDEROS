@@ -243,17 +243,26 @@ class SheetConnector:
     
     def get_products(self) -> pd.DataFrame:
         """
-        Lee la pestaña 'PRODUCTOS' y devuelve un DataFrame con todas sus columnas,
-        incluida 'CATEGORIA'.
+        Lee la pestaña de productos, usando el nombre de hoja
+        en mayúsculas para la maestra y con P mayúscula
+        para la plantilla de Fudo.
         """
-        sh    = self.client.open_by_url(self.spreadsheet_url)
-        sheet = sh.worksheet("PRODUCTOS")
+        sh = self.client.open_by_url(self.spreadsheet_url)
+        # Detectamos si es la plantilla de Fudo comparando el ID
+        # (la parte entre /d/ y /edit en la URL)
+        if "https://docs.google.com/spreadsheets/d/1xLmOA76L2xwnh0LUfLH813B35Md7cRXdmFCfPMKNxU8/edit" in self.spreadsheet_url:
+            sheet_name = "Productos"
+        else:
+            sheet_name = "PRODUCTOS"
+
+        sheet = sh.worksheet(sheet_name)
         all_vals = sheet.get_all_values()
         if not all_vals or len(all_vals) < 2:
             return pd.DataFrame(columns=all_vals[0] if all_vals else [])
         headers = all_vals[0]
         rows    = all_vals[1:]
         return pd.DataFrame(rows, columns=headers)
+
 
 def update_spreadsheet(spreadsheet_url, df):
     connector = SheetConnector(spreadsheet_url)
