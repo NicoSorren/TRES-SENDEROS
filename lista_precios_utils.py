@@ -7,8 +7,6 @@ import subprocess
 from datetime import date
 import shutil
 import os
-import win32com.client
-import pythoncom
 
 # Importamos las funciones de cálculo unificado (asegúrate de tener este módulo implementado)
 from price_calculator import compute_fraction_price, convertir_a_gramos
@@ -387,83 +385,78 @@ def crear_excel_con_estilo(df_out, row_types, title: str | None = None) -> Bytes
     output.seek(0)
     return output
 
-def excel_to_pdf(excel_buffer: BytesIO) -> BytesIO:
-    """
-    Convierte un BytesIO con un .xlsx a un BytesIO con el PDF
-    usando la automatización de MS Excel via COM en Windows.
-    Ajusta área de impresión, orienta en apaisado y fuerza FitToPageWide=1.
-    """
-    tmp_dir = tempfile.mkdtemp(prefix="lp_")
-    excel = None
+from io import BytesIO
+from datetime import date
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import landscape, A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import (
+    SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+)
+from reportlab.lib.units import cm
 
-    try:
-        # --- 1) Grabar el XLSX al disco ---
-        xlsx_path = os.path.join(tmp_dir, "lista_precios.xlsx")
-        pdf_path  = os.path.join(tmp_dir, "lista_precios.pdf")
-        with open(xlsx_path, "wb") as f:
-            f.write(excel_buffer.getvalue())
+def df_to_pdf(df_out, row_types, title: str | None = None) -> BytesIO:
+    """Genera un PDF en memoria con la tabla y estilos según row_types."""
+    _MONTHS = {
+        1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL",
+        5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO",
+        9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE", 12: "DICIEMBRE"
+    }
 
-        # --- 2) Inicializar COM ---
-        pythoncom.CoInitialize()
+    if title is None:
+        hoy = date.today()
+        title = f"LISTA DE PRECIOS {_MONTHS[hoy.month]} {hoy.year}"
 
-        # --- 3) Iniciar Excel en background ---
-        excel = win32com.client.DispatchEx("Excel.Application")
-        # Suprimir alertas
-        try:
-            excel.DisplayAlerts = False
-        except Exception:
-            pass
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(A4),
+        leftMargin=1*cm, rightMargin=1*cm,
+        topMargin=1*cm, bottomMargin=1*cm,
+    )
 
-        # --- 4) Abrir workbook con argumentos nombrados ---
-        wb = excel.Workbooks.Open(
-            Filename=os.path.abspath(xlsx_path),
-            UpdateLinks=0,
-            ReadOnly=True
+    styles = getSampleStyleSheet()
+    title_style = styles["Title"]
+    title_style.alignment = 1  # centrado
+    elements = [Paragraph(title, title_style), Spacer(1, 0.5*cm)]
+
+    # Preparo la tabla
+    data = [df_out.columns.tolist()] + df_out.values.tolist()
+    col_widths = [12*cm, 3*cm, 3*cm, 3*cm, 4*cm]
+    table = Table(data, colWidths=col_widths, repeatRows=1)
+
+    tbl_style = TableStyle([
+        ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
+        ("FONTNAME",   (0,0), (-1,0), "Helvetica-Bold"),
+        ("FONTSIZE",   (0,0), (-1,0), 12),
+        ("ALIGN",      (0,0), (-1,0), "CENTER"),
+        ("GRID",       (0,0), (-1,-1), 0.5, colors.grey),
+    ])
+
+    # Estilos por fila según row_types
+    for i, rtype in enumerate(row_types, start=1):
+        if rtype == "category":
+            tbl_style.add("BACKGROUND", (0,i), (-1,i), colors.HexColor("#93C47D"))
+            tbl_style.add("FONTNAME",   (0,i), (-1,i), "Helvetica-Bold")
+        elif rtype == "subcategory":
+            tbl_style.add("BACKGROUND", (0,i), (-1,i), colors.HexColor("#C5E1A5"))
+            tbl_style.add("LEFTPADDING", (0,i), (0,i), 12)
+            tbl_style.add("ITALIC", True)
+
+    table.setStyle(tbl_style)
+    elements.append(table)
+
+    # Pie de página
+    elements.append(Spacer(1, 0.5*cm))
+    footer = Paragraph(
+        "MENDOZA - ARGENTINA",
+        ParagraphStyle(
+            name="Footer", alignment=1, fontSize=10,
+            backColor=colors.HexColor("#93C47D"), leading=12
         )
-        ws = wb.Worksheets(1)
+    )
+    elements.append(footer)
 
-        # --- 5) Ajustar área de impresión ---
-        ws.PageSetup.PrintArea = ""  # limpia
-        used = ws.UsedRange
-        ws.PageSetup.PrintArea = used.Address
-
-        # --- 6) Configuración de página ---
-        const = win32com.client.constants
-        ws.PageSetup.Orientation    = 2
-        ws.PageSetup.Zoom           = False
-        ws.PageSetup.FitToPagesWide = 1
-        ws.PageSetup.FitToPagesTall = False
-
-        # --- 7) Exportar a PDF ---
-        wb.ExportAsFixedFormat(
-            Type=0,                # 0 = PDF
-            Filename=os.path.abspath(pdf_path),
-            Quality=0,             # estándar
-            IncludeDocProperties=True,
-            IgnorePrintAreas=False
-        )
-        wb.Close(SaveChanges=False)
-
-        # --- 8) Leer PDF y devolver BytesIO ---
-        with open(pdf_path, "rb") as f:
-            pdf_bytes = f.read()
-        return BytesIO(pdf_bytes)
-
-    except pythoncom.com_error as com_err:
-        # Error COM: lo reportamos con detalle
-        raise RuntimeError(f"Error de COM al procesar el Excel: {com_err}") from com_err
-
-    finally:
-        # --- 9) Cerrar Excel y liberar COM ---
-        if excel:
-            try:
-                excel.Quit()
-            except Exception:
-                pass
-        try:
-            pythoncom.CoUninitialize()
-        except Exception:
-            pass
-
-        # --- 10) Eliminar temporales ---
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer

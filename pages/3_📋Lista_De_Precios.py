@@ -6,7 +6,7 @@ from io import BytesIO
 from lista_precios_utils import (
     generar_lista_precios_df,
     crear_excel_con_estilo,
-    excel_to_pdf
+    df_to_pdf
 )
 
 def lista_precios_page():
@@ -49,23 +49,22 @@ def lista_precios_page():
         st.markdown("### Convertir un Excel a PDF")
 
         # 4) Uploader para que suba el mismo Excel (o cualquier otro)
-        uploaded = st.file_uploader(
-            label="Sube tu archivo Excel de Lista de Precios",
-            type=["xlsx", "xls"]
-        )
-        if uploaded is not None:
-            try:
-                buffer = BytesIO(uploaded.read())
-                pdf_file = excel_to_pdf(buffer)
-                st.success("Conversión a PDF exitosa 🎉")
-                st.download_button(
-                    label="Descargar Lista de Precios (PDF)",
-                    data=pdf_file,
-                    file_name="ListaPrecios.pdf",
-                    mime="application/pdf"
-                )
-            except Exception as e:
-                st.error(f"No se pudo convertir a PDF: {e}")
+        # — tras st.download_button de Excel —  
+        st.markdown("---")  
+        if st.button("📄 Descargar Lista de Precios (PDF)"):  
+            try:  
+                df_out    = st.session_state["df_out"]  
+                row_types = st.session_state["row_types"]  
+                pdf_buffer = df_to_pdf(df_out, row_types)  
+                st.download_button(  
+                    label="Descargar Lista de Precios (PDF)",  
+                    data=pdf_buffer,  
+                    file_name="ListaPrecios.pdf",  
+                    mime="application/pdf"  
+                )  
+            except Exception as e:  
+                st.error(f"No se pudo generar el PDF: {e}")  
+
 
 if __name__ == "__main__":
     lista_precios_page()
