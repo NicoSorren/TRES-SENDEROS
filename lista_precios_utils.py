@@ -408,13 +408,12 @@ def excel_to_pdf(buffer: BytesIO) -> BytesIO:
         creds_info,
         scopes=[
     "https://www.googleapis.com/auth/drive",
-    "https://www.googleapis.com/auth/drive.file",
     ]
     )
     authed_sess = AuthorizedSession(creds)
 
     # 2) Multipart upload para crear un Google Sheet
-    metadata = {"name": "temp_lista_precios", "mimeType": "application/vnd.google-apps.spreadsheet"}
+    metadata = {"name": "temp_lista_precios", "mimeType": "application/vnd.google-apps.spreadsheet",  "parents": ["1B148b73exmu2Zt3q3nE_zpiaNS0-ZxE8"]}
     files = {
         "metadata": ("metadata", json.dumps(metadata), "application/json"),
         "file":     ("content", buffer, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
@@ -423,6 +422,7 @@ def excel_to_pdf(buffer: BytesIO) -> BytesIO:
         "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",
         files=files
     )
+    st.write("UPLOAD RESP:", upload_resp.status_code, upload_resp.text)
     upload_resp.raise_for_status()
     file_id = upload_resp.json()["id"]
 
