@@ -12,10 +12,10 @@ import json
 from price_calculator import compute_fraction_price, convertir_a_gramos
 import streamlit as st
 import os
-import cloudconvert
+from cloudconvert import CloudConvert
 import time
 
-cc = cloudconvert.Api(api_key=st.secrets["cloudconvert"]["api_key"])
+cc = CloudConvert.Api(api_key=st.secrets["cloudconvert"]["api_key"])
 
 _MONTHS = {
     1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL",
