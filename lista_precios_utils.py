@@ -454,7 +454,7 @@ def excel_to_pdf(buffer: BytesIO) -> BytesIO:
     # 4) Una vez finalizado, recuperamos la URL del PDF
     export_task = next(t for t in job["tasks"] if t["name"] == "export-my-file")
     file_url    = export_task["result"]["files"][0]["url"]
-    pdf_resp    = requests.get(file_url, headers=HEADERS)
+    pdf_resp = requests.get(file_url)
     pdf_resp.raise_for_status()
 
     return BytesIO(pdf_resp.content)
