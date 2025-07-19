@@ -12,10 +12,13 @@ import json
 from price_calculator import compute_fraction_price, convertir_a_gramos
 import streamlit as st
 import os
-from cloudconvert import CloudConvert
+import cloudconvert
 import time
 
-cc = CloudConvert(api_key=st.secrets["cloudconvert"]["api_key"])
+cloudconvert.configure(
+    api_key=st.secrets["cloudconvert"]["api_key"],
+    sandbox=False
+)
 
 _MONTHS = {
     1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL",
@@ -391,26 +394,17 @@ def crear_excel_con_estilo(df_out, row_types, title: str | None = None) -> Bytes
     output.seek(0)
     return output
 
-from io import BytesIO
-from datetime import date
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import landscape, A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import (
-    SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-)
-from reportlab.lib.units import cm
 
 def excel_to_pdf(buffer: BytesIO) -> BytesIO:
     """
-    Convierte un XLSX a PDF con CloudConvert API v2:
-    1) Crea un job
-    2) Sube el buffer
-    3) Espera a que termine
-    4) Descarga el PDF
+    Convierte un XLSX a PDF con el SDK V2 de CloudConvert:
+      1) Crea un Job con tareas de import/upload, convert y export/url.
+      2) Sube el buffer al task import/upload.
+      3) Espera a que el Job termine.
+      4) Descarga el PDF resultante y lo devuelve en BytesIO.
     """
-    # 1) Crear job
-    job = cc.jobs.create(payload={
+    # 1) Creamos el Job
+    job = cloudconvert.Job.create(payload={
         "tasks": {
             "import-my-file": {
                 "operation": "import/upload"
@@ -420,11 +414,8 @@ def excel_to_pdf(buffer: BytesIO) -> BytesIO:
                 "input": "import-my-file",
                 "input_format": "xlsx",
                 "output_format": "pdf",
-                "engine": "libreoffice",  # opcional: define el motor
-                "pdf": {
-                    "paper_size": "A4",
-                    "orientation": "landscape"
-                }
+                "engine": "libreoffice",
+                "pdf": {"paper_size": "A4", "orientation": "landscape"}
             },
             "export-my-file": {
                 "operation": "export/url",
@@ -433,27 +424,32 @@ def excel_to_pdf(buffer: BytesIO) -> BytesIO:
         }
     })
 
-    # 2) Subir el buffer al task “import-my-file”
-    upload_task = job["tasks"]["import-my-file"]
-    form      = upload_task["result"]["form"]
-    files     = {"file": ("lista.xlsx", buffer, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
-    cc.http_client.post(form["url"], data=form["parameters"], files=files).raise_for_status()
+    # 2) Subimos el archivo al task import-my-file
+    upload_task = next(t for t in job["tasks"] if t["name"] == "import-my-file")
+    form = upload_task["result"]["form"]
+    resp = cloudconvert.http_client.post(
+        form["url"],
+        data=form["parameters"],
+        files={"file": ("lista.xlsx", buffer, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+    )
+    resp.raise_for_status()
 
-    # 3) Esperar a que termine
+    # 3) Esperamos a que termine
     job_id = job["id"]
     while True:
-        job = cc.jobs.get(id=job_id)
+        job = cloudconvert.Job.get(id=job_id)
         if job["status"] in ("finished", "error"):
             break
         time.sleep(1)
 
     if job["status"] == "error":
-        raise Exception(f"Error en la conversión: {job}")
+        raise Exception(f"Error en conversión: {job}")
 
-    # 4) Descargar el PDF
-    export_task = next(t for t in job["tasks"] if t["name"]=="export-my-file")
-    file_url    = export_task["result"]["files"][0]["url"]
-    resp        = cc.http_client.get(file_url)
-    resp.raise_for_status()
+    # 4) Descargamos el PDF desde export/url
+    export_task = next(t for t in job["tasks"] if t["name"] == "export-my-file")
+    file_url = export_task["result"]["files"][0]["url"]
+    pdf_resp = cloudconvert.http_client.get(file_url)
+    pdf_resp.raise_for_status()
 
-    return BytesIO(resp.content)
+    from io import BytesIO
+    return BytesIO(pdf_resp.content)
