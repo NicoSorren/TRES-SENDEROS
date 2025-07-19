@@ -12,11 +12,15 @@ import json
 from price_calculator import compute_fraction_price, convertir_a_gramos
 import streamlit as st
 import os
-from cloudconvert import CloudConvert   # trae la clase v2
 import time
+import requests
 
-cc = CloudConvert(api_key=st.secrets["cloudconvert"]["api_key"],
-                  sandbox=False)
+API_BASE = "https://api.cloudconvert.com/v2"
+HEADERS = {
+    "Authorization": f"Bearer {st.secrets['cloudconvert']['api_key']}",
+    "Content-Type": "application/json"
+}
+
 _MONTHS = {
     1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL",
     5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO",
@@ -393,47 +397,64 @@ def crear_excel_con_estilo(df_out, row_types, title: str | None = None) -> Bytes
 
 
 def excel_to_pdf(buffer: BytesIO) -> BytesIO:
-    # 1) Crear job
-    job = cc.jobs.create(payload={
+    # 1) Creamos un Job con 3 tareas: importar, convertir y exportar
+    job_payload = {
         "tasks": {
-            "import-my-file": {"operation": "import/upload"},
+            "import-my-file": {
+                "operation": "import/upload"
+            },
             "convert-my-file": {
                 "operation": "convert",
                 "input": "import-my-file",
                 "input_format": "xlsx",
                 "output_format": "pdf",
                 "engine": "libreoffice",
-                "pdf": {"paper_size":"A4","orientation":"landscape"}
+                "pdf": {
+                    "paper_size": "A4",
+                    "orientation": "landscape"
+                }
             },
-            "export-my-file": {"operation": "export/url", "input":"convert-my-file"}
+            "export-my-file": {
+                "operation": "export/url",
+                "input": "convert-my-file"
+            }
         }
-    })
+    }
+    resp = requests.post(f"{API_BASE}/jobs", json=job_payload, headers=HEADERS)
+    resp.raise_for_status()
+    job = resp.json()["data"]
 
-    # 2) Subir el buffer
-    upload_task = next(t for t in job["tasks"] if t["name"]=="import-my-file")
-    form        = upload_task["result"]["form"]
-    post_resp   = cc.http_client.post(
-        form["url"],
-        data=form["parameters"],
-        files={"file": ("lista.xlsx", buffer,
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
-    )
-    post_resp.raise_for_status()
+    # 2) Subimos el buffer al formulario que nos devuelve la tarea import/upload
+    import_task = next(t for t in job["tasks"] if t["name"] == "import-my-file")
+    upload_url  = import_task["result"]["form"]["url"]
+    form_params = import_task["result"]["form"]["parameters"]
+    files       = {
+        "file": (
+            "lista.xlsx",
+            buffer.getvalue(),
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    }
+    upload_resp = requests.post(upload_url, data=form_params, files=files)
+    upload_resp.raise_for_status()
 
-    # 3) Esperar a que acabe
+    # 3) Polling: esperamos a que termine el Job
     job_id = job["id"]
     while True:
-        job = cc.jobs.get(id=job_id)
+        status_resp = requests.get(f"{API_BASE}/jobs/{job_id}", headers=HEADERS)
+        status_resp.raise_for_status()
+        job = status_resp.json()["data"]
         if job["status"] in ("finished", "error"):
             break
         time.sleep(1)
-    if job["status"] == "error":
-        raise Exception(f"Error en conversión: {job}")
 
-    # 4) Descargar PDF
-    export_task = next(t for t in job["tasks"] if t["name"]=="export-my-file")
+    if job["status"] == "error":
+        raise Exception(f"CloudConvert error: {job}")
+
+    # 4) Una vez finalizado, recuperamos la URL del PDF
+    export_task = next(t for t in job["tasks"] if t["name"] == "export-my-file")
     file_url    = export_task["result"]["files"][0]["url"]
-    pdf_resp    = cc.http_client.get(file_url)
+    pdf_resp    = requests.get(file_url, headers=HEADERS)
     pdf_resp.raise_for_status()
 
     return BytesIO(pdf_resp.content)
