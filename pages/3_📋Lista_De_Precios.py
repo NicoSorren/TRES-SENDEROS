@@ -54,6 +54,14 @@ def lista_precios_page():
             type=["xlsx", "xls"]
         )
         if uploaded is not None:
+            # 1) Extraemos del estado el df generado y sus tipos de fila
+            df_out    = st.session_state.get("df_out")
+            row_types = st.session_state.get("row_types")
+
+            # 2) Debug para asegurarnos de que existen y tienen sentido
+            st.write("DEBUG → df_out tipo/shape:", type(df_out), getattr(df_out, "shape", None))
+            st.write("DEBUG → row_types tipo/len:", type(row_types), len(row_types) if row_types else None)
+
             try:
                 pdf_buffer = df_to_pdf(df_out, row_types)
                 st.success("Conversión a PDF exitosa 🎉")
@@ -64,7 +72,8 @@ def lista_precios_page():
                     mime="application/pdf"
                 )
             except Exception as e:
-                st.error(f"No se pudo convertir a PDF: {e}")
+                st.error("No se pudo convertir a PDF:")
+                st.write(e)
 
 if __name__ == "__main__":
     lista_precios_page()
