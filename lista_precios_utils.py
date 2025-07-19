@@ -412,17 +412,19 @@ def excel_to_pdf(buffer: BytesIO) -> BytesIO:
     )
     authed_sess = AuthorizedSession(creds)
 
+    # — justo antes del multipart upload —
+    # Listar archivos con nombre “temp_lista_precios” en el Drive de la service-account
     list_resp = authed_sess.get(
-    "https://www.googleapis.com/drive/v3/files",
-    params={
-        "q": "name = 'temp_lista_precios'",
-        "fields": "files(id,name,owners)"
-    }
-)
+        "https://www.googleapis.com/drive/v3/files",
+        params={
+            "q": "name = 'temp_lista_precios'",
+            "fields": "files(id,name,owners)"
+        }
+    )
     list_resp.raise_for_status()
     files = list_resp.json().get("files", [])
     st.write("ARCHIVOS EXISTENTES temp_lista_precios:", files)
-    
+
     # 2) Multipart upload para crear un Google Sheet
     metadata = {"name": "temp_lista_precios", "mimeType": "application/vnd.google-apps.spreadsheet",  "parents": ["1B148b73exmu2Zt3q3nE_zpiaNS0-ZxE8"]}
     files = {
