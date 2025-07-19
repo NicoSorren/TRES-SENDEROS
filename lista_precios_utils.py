@@ -5,11 +5,13 @@ from openpyxl.styles import Alignment, Font, PatternFill
 import tempfile
 import subprocess
 from datetime import date
-import shutil
-import os
-
+from google.oauth2.service_account import Credentials
+from google.auth.transport.requests import AuthorizedSession
+import json
 # Importamos las funciones de cálculo unificado (asegúrate de tener este módulo implementado)
 from price_calculator import compute_fraction_price, convertir_a_gramos
+import streamlit as st
+import os
 
 _MONTHS = {
     1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL",
@@ -395,74 +397,41 @@ from reportlab.platypus import (
 )
 from reportlab.lib.units import cm
 
-def df_to_pdf(df_out, row_types, title: str | None = None) -> BytesIO:
-    """Genera un PDF en memoria con la tabla y estilos según row_types."""
-    _MONTHS = {
-        1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL",
-        5: "MAYO", 6: "JUNIO", 7: "JULIO", 8: "AGOSTO",
-        9: "SEPTIEMBRE", 10: "OCTUBRE", 11: "NOVIEMBRE", 12: "DICIEMBRE"
+def excel_to_pdf(buffer: BytesIO) -> BytesIO:
+    """
+    Sube a Drive el XLSX en buffer, lo exporta a PDF y devuelve el PDF en memoria.
+    """
+    # 1) Credenciales de servicio
+    creds_info = json.loads(os.environ.get("GCP_SERVICE_ACCOUNT_JSON",
+                                           st.secrets["gcp_service_account"]["json"]))
+    creds = Credentials.from_service_account_info(
+        creds_info,
+        scopes=["https://www.googleapis.com/auth/drive.file"]
+    )
+    authed_sess = AuthorizedSession(creds)
+
+    # 2) Multipart upload para crear un Google Sheet
+    metadata = {"name": "temp_lista_precios", "mimeType": "application/vnd.google-apps.spreadsheet"}
+    files = {
+        "metadata": ("metadata", json.dumps(metadata), "application/json"),
+        "file":     ("content", buffer, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
     }
-
-    if title is None:
-        hoy = date.today()
-        title = f"LISTA DE PRECIOS {_MONTHS[hoy.month]} {hoy.year}"
-
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=landscape(A4),
-        leftMargin=1*cm, rightMargin=1*cm,
-        topMargin=1*cm, bottomMargin=1*cm,
+    upload_resp = authed_sess.post(
+        "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",
+        files=files
     )
+    upload_resp.raise_for_status()
+    file_id = upload_resp.json()["id"]
 
-    styles = getSampleStyleSheet()
-    title_style = styles["Title"]
-    title_style.alignment = 1  # centrado
-    elements = [Paragraph(title, title_style), Spacer(1, 0.5*cm)]
+    try:
+        # 3) Exportar a PDF
+        export_url = f"https://www.googleapis.com/drive/v3/files/{file_id}/export?mimeType=application/pdf"
+        resp = authed_sess.get(export_url)
+        resp.raise_for_status()
+        pdf_buf = BytesIO(resp.content)
+    finally:
+        # 4) Limpiar: eliminar el archivo temporal en Drive
+        authed_sess.delete(f"https://www.googleapis.com/drive/v3/files/{file_id}")
 
-    # Preparo la tabla
-    data = [df_out.columns.tolist()] + df_out.values.tolist()
-    col_widths = [12*cm, 3*cm, 3*cm, 3*cm, 4*cm]
-    table = Table(data, colWidths=col_widths, repeatRows=1)
-
-    tbl_style = TableStyle([
-        ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
-        ("FONTNAME",   (0,0), (-1,0), "Helvetica-Bold"),
-        ("FONTSIZE",   (0,0), (-1,0), 12),
-        ("ALIGN",      (0,0), (-1,0), "CENTER"),
-        ("GRID",       (0,0), (-1,-1), 0.5, colors.grey),
-    ])
-
-    # Estilos por fila según row_types
-    for i, rtype in enumerate(row_types, start=1):
-        if rtype == "category":
-            tbl_style.add("BACKGROUND", (0,i), (-1,i), colors.HexColor("#93C47D"))
-            tbl_style.add("FONTNAME",   (0,i), (-1,i), "Helvetica-Bold")
-        elif rtype == "subcategory":
-            tbl_style.add("BACKGROUND", (0,i), (-1,i), colors.HexColor("#C5E1A5"))
-            tbl_style.add("LEFTPADDING", (0,i), (-1,i), 12)
-            # En lugar de "ITALIC", aplicamos un font italic
-            tbl_style.add(
-                "FONTNAME",
-                (0, i),      # columna 0 fila i
-                (-1, i),     # última columna fila i
-                "Helvetica-Oblique"
-            )
-
-    table.setStyle(tbl_style)
-    elements.append(table)
-
-    # Pie de página
-    elements.append(Spacer(1, 0.5*cm))
-    footer = Paragraph(
-        "MENDOZA - ARGENTINA",
-        ParagraphStyle(
-            name="Footer", alignment=1, fontSize=10,
-            backColor=colors.HexColor("#93C47D"), leading=12
-        )
-    )
-    elements.append(footer)
-
-    doc.build(elements)
-    buffer.seek(0)
-    return buffer
+    pdf_buf.seek(0)
+    return pdf_buf
