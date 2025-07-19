@@ -403,50 +403,20 @@ from reportlab.lib.units import cm
 
 def excel_to_pdf(buffer: BytesIO) -> BytesIO:
     """
-    Envía el XLSX a CloudConvert y devuelve el PDF resultante en un BytesIO.
+    Convierte un XLSX a PDF usando cloudconvert 1.0.0:
+    sube + convierte + baja el resultado.
     """
-    # Crea el job: import → convert → export/url
-    job = cc.jobs.create(payload={
-        "tasks": {
-            "import-my-file": {
-                "operation": "import/upload"
-            },
-            "convert-my-file": {
-                "operation": "convert",
-                "input": "import-my-file",
-                "input_format": "xlsx",
-                "output_format": "pdf",
-                # aquí puedes incluir opciones como tamaño de papel
-            },
-            "export-my-file": {
-                "operation": "export/url",
-                "input": "convert-my-file"
-            }
-        }
+    # 1) Lanza la conversión: sube y convierte
+    process = cc.convert({
+        "inputformat": "xlsx",
+        "outputformat": "pdf",
+        "input": "upload",
+        "file": buffer
     })
 
-    # Sube el archivo
-    upload_task = job["tasks"]["import-my-file"]
-    upload_url  = upload_task["result"]["form"]["url"]
-    upload_params = upload_task["result"]["form"]["parameters"]
-    files = {"file": ("lista.xlsx", buffer, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
-    cc.http_client.post(upload_url, data=upload_params, files=files).raise_for_status()
+    # 2) Espera a que termine
+    process.wait()
 
-    # Espera a que termine
-    job_id = job["id"]
-    while True:
-        job = cc.jobs.get(id=job_id)
-        if job["status"] in ("finished", "error"):
-            break
-        time.sleep(1)
-
-    if job["status"] == "error":
-        raise Exception("Error en conversión: " + str(job))
-
-    # Descarga el PDF
-    export_task = next(t for t in job["tasks"] if t["name"] == "export-my-file")
-    pdf_url = export_task["result"]["files"][0]["url"]
-    pdf_resp = cc.http_client.get(pdf_url)
-    pdf_resp.raise_for_status()
-
-    return BytesIO(pdf_resp.content)
+    # 3) Descarga el PDF resultante
+    pdf_bytes = process.download()
+    return BytesIO(pdf_bytes)

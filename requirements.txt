@@ -7,4 +7,4 @@ altair
 phonenumbers
 reportlab
 google-api-python-client
-cloudconvert==1.4.0
+cloudconvert==1.0.0
