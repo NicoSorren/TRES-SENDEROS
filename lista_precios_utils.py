@@ -417,8 +417,11 @@ def excel_to_pdf(buffer: BytesIO) -> BytesIO:
     list_resp = authed_sess.get(
         "https://www.googleapis.com/drive/v3/files",
         params={
-            "q": "name = 'temp_lista_precios'",
-            "fields": "files(id,name,owners)"
+            "q": "name contains 'temp_lista_precios'",
+            "spaces": "drive",
+            "fields": "files(id,name,owners,parents)",
+            "includeItemsFromAllDrives": "true",
+            "supportsAllDrives": "true",
         }
     )
     list_resp.raise_for_status()
