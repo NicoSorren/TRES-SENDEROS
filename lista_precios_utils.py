@@ -406,7 +406,10 @@ def excel_to_pdf(buffer: BytesIO) -> BytesIO:
                                            st.secrets["gcp_service_account"]["json"]))
     creds = Credentials.from_service_account_info(
         creds_info,
-        scopes=["https://www.googleapis.com/auth/drive.file"]
+        scopes=[
+    "https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/drive.file",
+    ]
     )
     authed_sess = AuthorizedSession(creds)
 
