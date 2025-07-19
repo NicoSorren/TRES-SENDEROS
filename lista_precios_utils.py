@@ -409,6 +409,8 @@ def excel_to_pdf(buffer: BytesIO) -> BytesIO:
                 "input_format": "xlsx",
                 "output_format": "pdf",
                 "engine": "libreoffice",
+                "sheet":            "Sheet1",
+                "use_print_areas":  False,
                 "pdf": {
                     "paper_size": "A4",
                     "orientation": "landscape"
