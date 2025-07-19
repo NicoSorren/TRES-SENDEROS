@@ -49,17 +49,11 @@ def lista_precios_page():
         st.markdown("### Convertir un Excel a PDF")
 
         # 4) Uploader para que suba el mismo Excel (o cualquier otro)
-        uploaded = st.file_uploader("Sube tu archivo Excel de Lista de Precios", type=["xlsx","xls"])
-        if uploaded is not None:
+        uploaded = st.file_uploader("Sube tu Excel…", type=["xlsx","xls"])
+        if uploaded:
             try:
-                pdf_buffer = excel_to_pdf(BytesIO(uploaded.read()))
-                st.success("Conversión a PDF exitosa 🎉")
-                st.download_button(
-                    "Descargar Lista de Precios (PDF)",
-                    data=pdf_buffer,
-                    file_name="ListaPrecios.pdf",
-                    mime="application/pdf"
-                )
+                pdf_buf = excel_to_pdf(BytesIO(uploaded.read()))
+                st.download_button("Descargar PDF", pdf_buf, "ListaPrecios.pdf", "application/pdf")
             except Exception as e:
                 st.error(f"No se pudo convertir a PDF: {e}")
 

@@ -12,10 +12,10 @@ import json
 from price_calculator import compute_fraction_price, convertir_a_gramos
 import streamlit as st
 import os
-import cloudconvert
+from cloudconvert import CloudConvert
 import time
 
-cc = cloudconvert.Api(st.secrets["cloudconvert"]["api_key"])
+cc = CloudConvert(api_key=st.secrets["cloudconvert"]["api_key"])
 
 _MONTHS = {
     1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL",
@@ -403,20 +403,57 @@ from reportlab.lib.units import cm
 
 def excel_to_pdf(buffer: BytesIO) -> BytesIO:
     """
-    Convierte un XLSX a PDF usando cloudconvert 1.0.0:
-    sube + convierte + baja el resultado.
+    Convierte un XLSX a PDF con CloudConvert API v2:
+    1) Crea un job
+    2) Sube el buffer
+    3) Espera a que termine
+    4) Descarga el PDF
     """
-    # 1) Lanza la conversión: sube y convierte
-    process = cc.convert({
-        "inputformat": "xlsx",
-        "outputformat": "pdf",
-        "input": "upload",
-        "file": buffer
+    # 1) Crear job
+    job = cc.jobs.create(payload={
+        "tasks": {
+            "import-my-file": {
+                "operation": "import/upload"
+            },
+            "convert-my-file": {
+                "operation": "convert",
+                "input": "import-my-file",
+                "input_format": "xlsx",
+                "output_format": "pdf",
+                "engine": "libreoffice",  # opcional: define el motor
+                "pdf": {
+                    "paper_size": "A4",
+                    "orientation": "landscape"
+                }
+            },
+            "export-my-file": {
+                "operation": "export/url",
+                "input": "convert-my-file"
+            }
+        }
     })
 
-    # 2) Espera a que termine
-    process.wait()
+    # 2) Subir el buffer al task “import-my-file”
+    upload_task = job["tasks"]["import-my-file"]
+    form      = upload_task["result"]["form"]
+    files     = {"file": ("lista.xlsx", buffer, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+    cc.http_client.post(form["url"], data=form["parameters"], files=files).raise_for_status()
 
-    # 3) Descarga el PDF resultante
-    pdf_bytes = process.download()
-    return BytesIO(pdf_bytes)
+    # 3) Esperar a que termine
+    job_id = job["id"]
+    while True:
+        job = cc.jobs.get(id=job_id)
+        if job["status"] in ("finished", "error"):
+            break
+        time.sleep(1)
+
+    if job["status"] == "error":
+        raise Exception(f"Error en la conversión: {job}")
+
+    # 4) Descargar el PDF
+    export_task = next(t for t in job["tasks"] if t["name"]=="export-my-file")
+    file_url    = export_task["result"]["files"][0]["url"]
+    resp        = cc.http_client.get(file_url)
+    resp.raise_for_status()
+
+    return BytesIO(resp.content)
