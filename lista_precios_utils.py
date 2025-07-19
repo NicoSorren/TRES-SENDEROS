@@ -440,8 +440,14 @@ def df_to_pdf(df_out, row_types, title: str | None = None) -> BytesIO:
             tbl_style.add("FONTNAME",   (0,i), (-1,i), "Helvetica-Bold")
         elif rtype == "subcategory":
             tbl_style.add("BACKGROUND", (0,i), (-1,i), colors.HexColor("#C5E1A5"))
-            tbl_style.add("LEFTPADDING", (0,i), (0,i), 12)
-            tbl_style.add("ITALIC", True)
+            tbl_style.add("LEFTPADDING", (0,i), (-1,i), 12)
+            # En lugar de "ITALIC", aplicamos un font italic
+            tbl_style.add(
+                "FONTNAME",
+                (0, i),      # columna 0 fila i
+                (-1, i),     # última columna fila i
+                "Helvetica-Oblique"
+            )
 
     table.setStyle(tbl_style)
     elements.append(table)
