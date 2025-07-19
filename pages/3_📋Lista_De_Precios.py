@@ -55,17 +55,11 @@ def lista_precios_page():
         )
         if uploaded is not None:
             try:
-                buffer = BytesIO(uploaded.read())
-                pdf_buffer = excel_to_pdf(buffer)
-                st.success("Conversión a PDF exitosa 🎉")
-                st.download_button(
-                    label="Descargar Lista de Precios (PDF)",
-                    data=pdf_buffer,
-                    file_name="ListaPrecios.pdf",
-                    mime="application/pdf"
-                )
+                buf = BytesIO(uploaded.read())
+                pdf = excel_to_pdf(buf)
+                st.download_button("Descargar PDF", pdf, "ListaPrecios.pdf", "application/pdf")
             except Exception as e:
-                st.error(f"No se pudo convertir a PDF: {e}")
+                st.error(f"No se pudo convertir: {e}")
 
 
 if __name__ == "__main__":

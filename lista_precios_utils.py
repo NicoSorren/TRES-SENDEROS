@@ -12,6 +12,10 @@ import json
 from price_calculator import compute_fraction_price, convertir_a_gramos
 import streamlit as st
 import os
+import cloudconvert
+import time
+
+cc = cloudconvert.Api(api_key=st.secrets["cloudconvert"]["api_key"])
 
 _MONTHS = {
     1: "ENERO", 2: "FEBRERO", 3: "MARZO", 4: "ABRIL",
@@ -399,58 +403,50 @@ from reportlab.lib.units import cm
 
 def excel_to_pdf(buffer: BytesIO) -> BytesIO:
     """
-    Sube a Drive el XLSX en buffer, lo exporta a PDF y devuelve el PDF en memoria.
+    Envía el XLSX a CloudConvert y devuelve el PDF resultante en un BytesIO.
     """
-    # 1) Credenciales de servicio
-    creds_info = json.loads(os.environ.get("GCP_SERVICE_ACCOUNT_JSON",
-                                           st.secrets["gcp_service_account"]["json"]))
-    creds = Credentials.from_service_account_info(
-        creds_info,
-        scopes=[
-    "https://www.googleapis.com/auth/drive",
-    ]
-    )
-    authed_sess = AuthorizedSession(creds)
-
-    # — justo antes del multipart upload —
-    # Listar archivos con nombre “temp_lista_precios” en el Drive de la service-account
-    list_resp = authed_sess.get(
-        "https://www.googleapis.com/drive/v3/files",
-        params={
-            "q": "name contains 'temp_lista_precios'",
-            "spaces": "drive",
-            "fields": "files(id,name,owners,parents)",
-            "includeItemsFromAllDrives": "true",
-            "supportsAllDrives": "true",
+    # Crea el job: import → convert → export/url
+    job = cc.jobs.create(payload={
+        "tasks": {
+            "import-my-file": {
+                "operation": "import/upload"
+            },
+            "convert-my-file": {
+                "operation": "convert",
+                "input": "import-my-file",
+                "input_format": "xlsx",
+                "output_format": "pdf",
+                # aquí puedes incluir opciones como tamaño de papel
+            },
+            "export-my-file": {
+                "operation": "export/url",
+                "input": "convert-my-file"
+            }
         }
-    )
-    list_resp.raise_for_status()
-    files = list_resp.json().get("files", [])
-    st.write("ARCHIVOS EXISTENTES temp_lista_precios:", files)
+    })
 
-    # 2) Multipart upload para crear un Google Sheet
-    metadata = {"name": "temp_lista_precios", "mimeType": "application/vnd.google-apps.spreadsheet",  "parents": ["1B148b73exmu2Zt3q3nE_zpiaNS0-ZxE8"]}
-    files = {
-        "metadata": ("metadata", json.dumps(metadata), "application/json"),
-        "file":     ("content", buffer, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
-    }
-    upload_resp = authed_sess.post(
-        "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",
-        files=files
-    )
-    st.write("UPLOAD RESP:", upload_resp.status_code, upload_resp.text)
-    upload_resp.raise_for_status()
-    file_id = upload_resp.json()["id"]
+    # Sube el archivo
+    upload_task = job["tasks"]["import-my-file"]
+    upload_url  = upload_task["result"]["form"]["url"]
+    upload_params = upload_task["result"]["form"]["parameters"]
+    files = {"file": ("lista.xlsx", buffer, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+    cc.http_client.post(upload_url, data=upload_params, files=files).raise_for_status()
 
-    try:
-        # 3) Exportar a PDF
-        export_url = f"https://www.googleapis.com/drive/v3/files/{file_id}/export?mimeType=application/pdf"
-        resp = authed_sess.get(export_url)
-        resp.raise_for_status()
-        pdf_buf = BytesIO(resp.content)
-    finally:
-        # 4) Limpiar: eliminar el archivo temporal en Drive
-        authed_sess.delete(f"https://www.googleapis.com/drive/v3/files/{file_id}")
+    # Espera a que termine
+    job_id = job["id"]
+    while True:
+        job = cc.jobs.get(id=job_id)
+        if job["status"] in ("finished", "error"):
+            break
+        time.sleep(1)
 
-    pdf_buf.seek(0)
-    return pdf_buf
+    if job["status"] == "error":
+        raise Exception("Error en conversión: " + str(job))
+
+    # Descarga el PDF
+    export_task = next(t for t in job["tasks"] if t["name"] == "export-my-file")
+    pdf_url = export_task["result"]["files"][0]["url"]
+    pdf_resp = cc.http_client.get(pdf_url)
+    pdf_resp.raise_for_status()
+
+    return BytesIO(pdf_resp.content)
