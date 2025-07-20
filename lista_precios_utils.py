@@ -15,6 +15,7 @@ import os
 import time
 import requests
 from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
 
 API_BASE = "https://api.cloudconvert.com/v2"
 HEADERS = {
@@ -412,20 +413,35 @@ def _clear_print_areas(buffer: BytesIO) -> BytesIO:
 
 def normalize_excel(buffer: BytesIO) -> BytesIO:
     """
-    Quita las áreas de impresión y ajusta el escalado
-    para que todas las columnas entren en una sola página de ancho.
+    Quita áreas de impresión previas y fuerza un nuevo print_area
+    que cubre toda la zona con datos, ajustado a una página de ancho.
     """
     buffer.seek(0)
     wb = load_workbook(buffer)
     for ws in wb.worksheets:
-        # 1) Limpia cualquier área de impresión predefinida
+        # 1) Limpia cualquier print_area existente
         ws.print_area = None
         
-        # 2) En PageSetup, forzar ajuste al ancho de 1 página
-        ws.page_setup.fitToWidth  = 1
-        ws.page_setup.fitToHeight = 0  # alto automático
-        # Opcional: dejar en landscape
+        # 2) Detecta el rango usado
+        max_row = ws.max_row
+        max_col = ws.max_column
+        last_col_letter = get_column_letter(max_col)
+        new_area = f"A1:{last_col_letter}{max_row}"
+        
+        # 3) Asigna el rango completo como área de impresión
+        ws.print_area = new_area
+        
+        # 4) Ajustes de página: que quepa TODO en el ancho de 1 página
+        ws.page_setup.fitToPage  = True
+        ws.page_setup.fitToWidth = 1
+        ws.page_setup.fitToHeight = 0
         ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+        
+        # 5) Márgenes mínimos para ganar ancho extra
+        ws.page_margins.left   = 0.25
+        ws.page_margins.right  = 0.25
+        ws.page_margins.top    = 0.25
+        ws.page_margins.bottom = 0.25
 
     new_buf = BytesIO()
     wb.save(new_buf)
