@@ -14,6 +14,7 @@ import streamlit as st
 import os
 import time
 import requests
+from openpyxl import load_workbook
 
 API_BASE = "https://api.cloudconvert.com/v2"
 HEADERS = {
@@ -396,7 +397,23 @@ def crear_excel_con_estilo(df_out, row_types, title: str | None = None) -> Bytes
     return output
 
 
+def _clear_print_areas(buffer: BytesIO) -> BytesIO:
+    """
+    Quita cualquier área de impresión de todas las hojas del Excel en buffer.
+    """
+    buffer.seek(0)
+    wb = load_workbook(buffer)
+    for ws in wb.worksheets:
+        ws.print_area = None  # limpia cualquier print area definido
+    new_buf = BytesIO()
+    wb.save(new_buf)
+    new_buf.seek(0)
+    return new_buf
+
 def excel_to_pdf(buffer: BytesIO) -> BytesIO:
+    # 0) Limpiamos las áreas de impresión
+    buffer = _clear_print_areas(buffer)
+
     # 1) Creamos un Job con 3 tareas: importar, convertir y exportar
     job_payload = {
         "tasks": {
@@ -409,16 +426,14 @@ def excel_to_pdf(buffer: BytesIO) -> BytesIO:
                 "input_format": "xlsx",
                 "output_format": "pdf",
                 "engine": "libreoffice",
-                "sheet":            "Sheet1",
-                "use_print_areas":  False,
                 "pdf": {
-                    "paper_size": "A4",
+                    "paper_size":  "A4",
                     "orientation": "landscape"
                 }
             },
             "export-my-file": {
                 "operation": "export/url",
-                "input": "convert-my-file"
+                "input":     "convert-my-file"
             }
         }
     }
@@ -426,10 +441,9 @@ def excel_to_pdf(buffer: BytesIO) -> BytesIO:
     resp.raise_for_status()
     job = resp.json()["data"]
 
-    # 2) Subimos el buffer al formulario que nos devuelve la tarea import/upload
+    # 2) Subimos el buffer al task import/upload
     import_task = next(t for t in job["tasks"] if t["name"] == "import-my-file")
-    upload_url  = import_task["result"]["form"]["url"]
-    form_params = import_task["result"]["form"]["parameters"]
+    form        = import_task["result"]["form"]
     files       = {
         "file": (
             "lista.xlsx",
@@ -437,26 +451,25 @@ def excel_to_pdf(buffer: BytesIO) -> BytesIO:
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
     }
-    upload_resp = requests.post(upload_url, data=form_params, files=files)
-    upload_resp.raise_for_status()
+    up = requests.post(form["url"], data=form["parameters"], files=files)
+    up.raise_for_status()
 
-    # 3) Polling: esperamos a que termine el Job
+    # 3) Hacemos polling hasta que el job termine
     job_id = job["id"]
     while True:
-        status_resp = requests.get(f"{API_BASE}/jobs/{job_id}", headers=HEADERS)
-        status_resp.raise_for_status()
-        job = status_resp.json()["data"]
+        status = requests.get(f"{API_BASE}/jobs/{job_id}", headers=HEADERS)
+        status.raise_for_status()
+        job = status.json()["data"]
         if job["status"] in ("finished", "error"):
             break
         time.sleep(1)
-
     if job["status"] == "error":
         raise Exception(f"CloudConvert error: {job}")
 
-    # 4) Una vez finalizado, recuperamos la URL del PDF
+    # 4) Descargamos el PDF desde la URL pre-firmada (sin enviar headers)
     export_task = next(t for t in job["tasks"] if t["name"] == "export-my-file")
     file_url    = export_task["result"]["files"][0]["url"]
-    pdf_resp = requests.get(file_url)
+    pdf_resp    = requests.get(file_url)
     pdf_resp.raise_for_status()
 
     return BytesIO(pdf_resp.content)
