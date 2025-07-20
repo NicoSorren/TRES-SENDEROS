@@ -410,9 +410,31 @@ def _clear_print_areas(buffer: BytesIO) -> BytesIO:
     new_buf.seek(0)
     return new_buf
 
+def normalize_excel(buffer: BytesIO) -> BytesIO:
+    """
+    Quita las áreas de impresión y ajusta el escalado
+    para que todas las columnas entren en una sola página de ancho.
+    """
+    buffer.seek(0)
+    wb = load_workbook(buffer)
+    for ws in wb.worksheets:
+        # 1) Limpia cualquier área de impresión predefinida
+        ws.print_area = None
+        
+        # 2) En PageSetup, forzar ajuste al ancho de 1 página
+        ws.page_setup.fitToWidth  = 1
+        ws.page_setup.fitToHeight = 0  # alto automático
+        # Opcional: dejar en landscape
+        ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+
+    new_buf = BytesIO()
+    wb.save(new_buf)
+    new_buf.seek(0)
+    return new_buf
+
 def excel_to_pdf(buffer: BytesIO) -> BytesIO:
     # 0) Limpiamos las áreas de impresión
-    buffer = _clear_print_areas(buffer)
+    buffer = normalize_excel(buffer)
 
     # 1) Creamos un Job con 3 tareas: importar, convertir y exportar
     job_payload = {
