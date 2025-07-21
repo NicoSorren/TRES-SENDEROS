@@ -4,7 +4,6 @@ title: "🧾 Remito"
 ---
 """
 
-
 import streamlit as st
 import pandas as pd
 import datetime
@@ -309,19 +308,20 @@ def remito_integration_page():
                 costo_total = 0.0
                 for item in st.session_state["remito_items"]:
                     articulo = item["Artículo"]
-                    # Extraer nombre base y fracción (si la hay)
-                    if "(" in articulo and articulo.endswith(")"):
-                        prod_name, frac = articulo.rsplit(" (", 1)
-                        frac = frac[:-1]  # quitar ) final
+
+                    # Buscamos paréntesis de tipo "XXXg" o "XXXkg" al final
+                    m = re.search(r"\((\d+(?:\.\d+)?(?:g|kg))\)\s*$", articulo, re.IGNORECASE)
+                    if m:
+                        # Si encaja, es una fracción: separamos nombre y cantidad
+                        frac = m.group(1)                           # e.g. "250g" o "1kg"
+                        prod_name = articulo[:m.start()].strip()    # todo antes del paréntesis
+                        # calculamos factor según fracción
                         if frac.lower().endswith("kg"):
-                            kilos  = float(frac[:-2])
-                            factor = kilos
-                        elif frac.lower().endswith("g"):
-                            grams  = float(frac[:-1])
-                            factor = grams / 1000.0
+                            factor = float(frac[:-2])
                         else:
-                            factor = 1.0
+                            factor = float(frac[:-1]) / 1000.0
                     else:
+                        # No es una fracción, dejamos el nombre completo (incluyendo paréntesis)
                         prod_name = articulo
                         factor = 1.0
 
