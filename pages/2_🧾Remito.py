@@ -325,8 +325,33 @@ def remito_integration_page():
                         prod_name = articulo
                         factor = 1.0
 
-                    # Buscar costo de base en el catálogo
-                    fila = df[df["PRODUCTO"] == prod_name].iloc[0]
+                    # antes de buscar:
+                    prod_norm = prod_name.strip().lower()
+
+                    # construimos la máscara normalizando la columna PRODUCTO:
+                    serie_norm = (
+                        df["PRODUCTO"]
+                        .astype(str)
+                        .str.strip()
+                        .str.lower()
+                    )
+
+                    mask = serie_norm == prod_norm
+
+                    # y de paso, para depurar:
+                    st.write("🔍 prod_norm   =", repr(prod_norm))
+                    st.write("🔍 PRODUCTO únics (normalizados):", serie_norm.unique())
+                    st.write("🔍 coincidencias exactas:", mask.sum())
+
+                    # ahora sí:
+                    if mask.sum() == 0:
+                        # fallback: busca por “contains” para ver si aparece en parte
+                        contains = df[serie_norm.str.contains(prod_norm)]
+                        st.write("⚠️ coincidencias parciales (contains):", contains)
+                        raise ValueError(f"No pude encontrar '{prod_name}' en la hoja maestra.")
+
+                    fila = df[mask].iloc[0]
+
                     cost_base = float(fila["COSTO"])
                     costo_unitario = cost_base * factor
 
