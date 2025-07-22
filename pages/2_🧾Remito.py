@@ -337,18 +337,8 @@ def remito_integration_page():
                     )
 
                     mask = serie_norm == prod_norm
-
-                    # y de paso, para depurar:
-                    st.write("🔍 prod_norm   =", repr(prod_norm))
-                    st.write("🔍 PRODUCTO únics (normalizados):", serie_norm.unique())
-                    st.write("🔍 coincidencias exactas:", mask.sum())
-
-                    # ahora sí:
-                    if mask.sum() == 0:
-                        # fallback: busca por “contains” para ver si aparece en parte
-                        contains = df[serie_norm.str.contains(prod_norm)]
-                        st.write("⚠️ coincidencias parciales (contains):", contains)
-                        raise ValueError(f"No pude encontrar '{prod_name}' en la hoja maestra.")
+                    if not mask.any():
+                        raise ValueError(f"Producto no encontrado: '{prod_name}'")
 
                     fila = df[mask].iloc[0]
 
