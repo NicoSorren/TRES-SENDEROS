@@ -446,6 +446,10 @@ def dashboard_page():
 
     df_prods, df_rem, df_items, df_cli = load_all_data(SPREADSHEET_URL)
 
+    # — FILTRAR SOLO REMITOS ACTIVOS —
+    if "ESTADO" in df_rem.columns:
+        df_rem = df_rem[df_rem["ESTADO"].fillna("ACTIVO") == "ACTIVO"].copy()
+
     # — Filtro global de fechas —
     if df_rem.empty:
         st.info("No hay remitos cargados.")

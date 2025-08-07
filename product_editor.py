@@ -216,7 +216,5 @@ class ProductEditor:
             st.subheader("🔄 Vista previa en sesión del Sheet de Fudo tras cambios")
             st.dataframe(st.session_state.df_fudo, use_container_width=True)
 
-
-            
             # Forzar rerun para recargar valores actualizados
             return
