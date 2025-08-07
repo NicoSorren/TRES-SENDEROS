@@ -211,16 +211,12 @@ class ProductEditor:
                 st.session_state.df_fudo 
             )
 
-            st.write("▶️ [DEBUG master] STOCK dtype:", st.session_state.df["STOCK"].dtype)
-            st.write("▶️ [DEBUG master] STOCK únicos:", st.session_state.df["STOCK"].unique())
-
             st.session_state.df_fudo = df_export.copy()
 
             st.subheader("🔄 Vista previa en sesión del Sheet de Fudo tras cambios")
             st.dataframe(st.session_state.df_fudo, use_container_width=True)
 
-            st.write("▶️ [DEBUG page] Activo (SÍ / NO) únicos en df_fudo:",
-            st.session_state.df_fudo["Activo\n(SÍ / NO)"].unique())
+
             
             # Forzar rerun para recargar valores actualizados
             return
