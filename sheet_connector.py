@@ -1,9 +1,40 @@
 import json
+import time
 import gspread
+from gspread.exceptions import APIError
 from oauth2client.service_account import ServiceAccountCredentials
 import streamlit as st
 import pandas as pd
 import datetime
+
+# ----- Utilidades de robustez -----
+RETRY_STATUS = {429, 500, 502, 503, 504}
+
+def _status_code(api_error: APIError):
+    try:
+        return api_error.response.status_code
+    except Exception:
+        return None
+
+def _with_retry(fn, *args, **kwargs):
+    """
+    Ejecuta 'fn' con reintentos exponenciales si aparece APIError 429/5xx.
+    """
+    backoff = 0.8
+    last_err = None
+    for _ in range(5):  # hasta 5 intentos
+        try:
+            return fn(*args, **kwargs)
+        except APIError as e:
+            last_err = e
+            code = _status_code(e)
+            if code not in RETRY_STATUS:
+                raise
+            time.sleep(backoff)
+            backoff *= 1.8
+    # si agotamos reintentos, relanzamos
+    raise last_err
+
 
 def get_data_from_sheet(spreadsheet_url):
     connector = SheetConnector(spreadsheet_url)
@@ -17,6 +48,7 @@ def parse_price(price_str):
         return float(price_str)
     except ValueError:
         return 0.0
+
 
 class SheetConnector:
     def __init__(self, spreadsheet_url):
@@ -35,46 +67,38 @@ class SheetConnector:
         client = gspread.authorize(creds)
         return client
 
+    # ---------- GENERAL (sheet1: PRODUCTOS maestro) ----------
     def get_data(self):
         sheet = self.client.open_by_url(self.spreadsheet_url).sheet1
         try:
-            records = sheet.get_all_records()
+            records = _with_retry(sheet.get_all_records)
             df = pd.DataFrame(records)
-        except Exception:
-            values = sheet.get_all_values()
+        except APIError:
+            values = _with_retry(sheet.get_all_values)
             df = pd.DataFrame(values[1:], columns=values[0])
 
         df["PRECIO VENTA"] = df["PRECIO VENTA"].apply(parse_price)
-
-        #st.write("Tipo raw de FACTOR:", df["FACTOR"].dtype)
-        #st.write("Primeros valores raw:", df["FACTOR"].head(10).tolist())
         df["FACTOR"] = pd.to_numeric(df["FACTOR"], errors="coerce").round(2)
-        #st.write("🔍 Después, dtype:", df["FACTOR"].dtype)
-        #st.write("🔍 Después, head:", df["FACTOR"].head(10))
-
         df["STOCK"] = df["STOCK"].astype(str).str.strip()
         return df
 
     def update_data(self, df):
         """
-        Actualiza la hoja de cálculo con los datos del DataFrame.
-        Se asume que la primera fila de la hoja contiene los encabezados.
+        Actualiza la hoja activa (sheet1) con los datos del DataFrame.
         """
         spreadsheet = self.client.open_by_url(self.spreadsheet_url)
         sheet = spreadsheet.sheet1
         df_clean = df.copy().where(pd.notnull(df), "")
         if "FACTOR" in df_clean.columns:
             df_clean["FACTOR"] = df_clean["FACTOR"].map(lambda x: f"{x:.2f}")
-            
         data = [df_clean.columns.tolist()] + df_clean.values.tolist()
-        sheet.update('A1', data)
+        _with_retry(sheet.update, 'A1', data)
 
-    # ← NUEVO
+    # ---------- CLIENTES ----------
     def get_clients(self) -> pd.DataFrame:
-        """Lee la pestaña 'CLIENTES', incluso si solo hay header."""
         spreadsheet = self.client.open_by_url(self.spreadsheet_url)
         sheet = spreadsheet.worksheet("CLIENTES")
-        values = sheet.get_all_values()
+        values = _with_retry(sheet.get_all_values)
         if not values:
             return pd.DataFrame()
         headers = values[0]
@@ -82,56 +106,58 @@ class SheetConnector:
         df = pd.DataFrame(data, columns=headers)
         return df
 
-    # ← NUEVO
     def add_client(self, client_data: dict):
         sheet = self.client.open_by_url(self.spreadsheet_url).worksheet("CLIENTES")
-        headers = sheet.row_values(1)
-        # Aseguramos FECHA_ALTA en headers
+        headers = _with_retry(sheet.row_values, 1)
         if "FECHA_ALTA" not in headers:
             headers.append("FECHA_ALTA")
-            sheet.update("A1", [headers])
-        # Construimos la fila
+            _with_retry(sheet.update, "A1", [headers])
         row = []
         for h in headers:
             if h == "FECHA_ALTA":
                 row.append(client_data.get(h, datetime.date.today().isoformat()))
             else:
                 row.append(client_data.get(h, ""))
-        sheet.append_row(row)
+        _with_retry(sheet.append_row, row)
 
-    def record_history(self, record: dict):
-        """
-        Agrega un registro de remito en la hoja 'HISTORIAL'.
-        Se asume que existe una pestaña llamada HISTORIAL con cabecera:
-        ['ID CLIENTE','NÚMERO_REMITO','FECHA_REMITO','TOTAL']
-        """
+    def update_client(self, client_data: dict):
         spreadsheet = self.client.open_by_url(self.spreadsheet_url)
-        sheet       = spreadsheet.worksheet('HISTORIAL')
-        headers     = sheet.row_values(1)
-        row = [record.get(h, "") for h in headers]
-        sheet.append_row(row)
+        sheet = spreadsheet.worksheet("CLIENTES")
+        cell = _with_retry(sheet.find, client_data["ID CLIENTE"])
+        row_idx = cell.row
+        headers = _with_retry(sheet.row_values, 1)
+        row = [client_data.get(h, "") for h in headers]
+        _with_retry(sheet.update, f"A{row_idx}", [row])
 
-    def get_history(self) -> pd.DataFrame:
-        """
-        Lee toda la hoja 'HISTORIAL' y devuelve un DataFrame.
-        """
+    def delete_client(self, client_id: str):
+        spreadsheet = self.client.open_by_url(self.spreadsheet_url)
+        sheet = spreadsheet.worksheet("CLIENTES")
+        cell = _with_retry(sheet.find, client_id)
+        _with_retry(sheet.delete_rows, cell.row)
+
+    # ---------- HISTORIAL (si lo usas) ----------
+    def record_history(self, record: dict):
         spreadsheet = self.client.open_by_url(self.spreadsheet_url)
         sheet = spreadsheet.worksheet('HISTORIAL')
-        values = sheet.get_all_values()
+        headers = _with_retry(sheet.row_values, 1)
+        row = [record.get(h, "") for h in headers]
+        _with_retry(sheet.append_row, row)
+
+    def get_history(self) -> pd.DataFrame:
+        spreadsheet = self.client.open_by_url(self.spreadsheet_url)
+        sheet = spreadsheet.worksheet('HISTORIAL')
+        values = _with_retry(sheet.get_all_values)
         if not values or len(values) < 2:
             return pd.DataFrame()
         headers = values[0]
         data    = values[1:]
         return pd.DataFrame(data, columns=headers)
 
+    # ---------- UTILIDAD borrado por categoría en sheet1 ----------
     def delete_category_rows(self, category_name):
-        """
-        Elimina del spreadsheet todas las filas cuyo valor en la columna 'CATEGORIA'
-        coincida (ignorando mayúsculas y espacios) con category_name.
-        """
         spreadsheet = self.client.open_by_url(self.spreadsheet_url)
         sheet = spreadsheet.sheet1
-        all_rows = sheet.get_all_values()
+        all_rows = _with_retry(sheet.get_all_values)
         if not all_rows:
             return
         header = all_rows[0]
@@ -145,71 +171,42 @@ class SheetConnector:
             if len(row) > cat_index and row[cat_index].strip().lower() == category_name.strip().lower():
                 rows_to_delete.append(i)
         for row_num in sorted(rows_to_delete, reverse=True):
-            sheet.delete_rows(row_num)
+            _with_retry(sheet.delete_rows, row_num)
 
-    def update_client(self, client_data: dict):
-        """
-        Actualiza un cliente existente en 'CLIENTES' buscando por ID CLIENTE.
-        client_data debe incluir todas las columnas: ID CLIENTE, NOMBRE, DIRECCION, TELEFONO, EMAIL, OBSERVACIONES.
-        """
-        spreadsheet = self.client.open_by_url(self.spreadsheet_url)
-        sheet = spreadsheet.worksheet("CLIENTES")
-        # Encuentro la fila donde está el ID
-        cell = sheet.find(client_data["ID CLIENTE"])
-        row_idx = cell.row
-        headers = sheet.row_values(1)
-        row = [client_data.get(h, "") for h in headers]
-        # Actualizo esa fila
-        sheet.update(f"A{row_idx}", [row])
-
-    def delete_client(self, client_id: str):
-        """
-        Elimina la fila del cliente cuyo ID CLIENTE coincida.
-        """
-        spreadsheet = self.client.open_by_url(self.spreadsheet_url)
-        sheet = spreadsheet.worksheet("CLIENTES")
-        cell = sheet.find(client_id)
-        sheet.delete_rows(cell.row)
-
+    # ---------- REMITOS ----------
     def record_remito(self, remito_data: dict):
         """
         Agrega una fila a la pestaña 'REMITOS' con encabezados:
-        ['ID CLIENTE','NUMERO REMITO','FECHA', 'DESTINATARIO',
+        ['ID CLIENTE','NUMERO REMITO','FECHA','DESTINATARIO',
          'SUBTOTAL','DESCUENTO','DESCUENTO MONTO','TOTAL FACTURADO',
-         'COSTO TOTAL','GANANCIA','NOTAS']
+         'COSTO TOTAL','GANANCIA','NOTAS', 'ESTADO'(opcional)]
         """
         sheet = self.client.open_by_url(self.spreadsheet_url).worksheet("REMITOS")
-        headers = sheet.row_values(1)
-        row = [ remito_data.get(h, "") for h in headers ]
-        sheet.append_row(row)
+        headers = _with_retry(sheet.row_values, 1)
+        row = [remito_data.get(h, "") for h in headers]
+        _with_retry(sheet.append_row, row)
 
     def get_remitos(self) -> pd.DataFrame:
-        """
-        Lee toda la pestaña 'REMITOS' y devuelve un DataFrame.
-        """
         sheet = self.client.open_by_url(self.spreadsheet_url).worksheet("REMITOS")
-        values = sheet.get_all_values()
+        values = _with_retry(sheet.get_all_values)
         if not values or len(values) < 2:
             return pd.DataFrame(columns=values[0] if values else [])
         headers = values[0]
         data = values[1:]
         return pd.DataFrame(data, columns=headers)
-    
+
+    # ---------- DETALLE_REMITOS ----------
     def record_remito_items(self, remito_number: str, fecha: str, client_id: str, items: list[dict]):
         """
         Registra en DETALLE_REMITOS cada ítem de un remito.
-        items = [
-          {"Artículo": "...", "Cantidad": 2, "Precio": 150.0, "Subtotal": 300.0},
-          …
-        ]
         """
         sh = self.client.open_by_url(self.spreadsheet_url)
         sheet = sh.worksheet("DETALLE_REMITOS")
-        headers = sheet.row_values(1)
+        _ = _with_retry(sheet.row_values, 1)  # asegura headers creados
 
         rows = []
         for it in items:
-            row = [
+            rows.append([
                 remito_number,
                 fecha,
                 client_id,
@@ -217,18 +214,13 @@ class SheetConnector:
                 it["Cantidad"],
                 it["Precio"],
                 it["Subtotal"]
-            ]
-            rows.append(row)
-        # Apendemos todas las filas de golpe:
-        sheet.append_rows(rows)
+            ])
+        _with_retry(sheet.append_rows, rows)
 
     def get_remito_items(self) -> pd.DataFrame:
-        """
-        Lee todo DETALLE_REMITOS y lo devuelve como DataFrame.
-        """
         sh = self.client.open_by_url(self.spreadsheet_url)
         sheet = sh.worksheet("DETALLE_REMITOS")
-        values = sheet.get_all_values()
+        values = _with_retry(sheet.get_all_values)
         if not values or len(values) < 2:
             return pd.DataFrame(columns=values[0] if values else [])
         headers = values[0]
@@ -240,23 +232,16 @@ class SheetConnector:
         df["SUBTOTAL"] = pd.to_numeric(df["SUBTOTAL"], errors="coerce")
         df["PRECIO_UNITARIO"] = pd.to_numeric(df["PRECIO_UNITARIO"], errors="coerce")
         return df
-    
+
+    # ---------- PRODUCTOS ----------
     def get_products(self) -> pd.DataFrame:
-        """
-        Lee la pestaña de productos, usando el nombre de hoja
-        en mayúsculas para la maestra y con P mayúscula
-        para la plantilla de Fudo.
-        """
         sh = self.client.open_by_url(self.spreadsheet_url)
-        # Detectamos si es la plantilla de Fudo comparando el ID
-        # (la parte entre /d/ y /edit en la URL)
         if "https://docs.google.com/spreadsheets/d/1xLmOA76L2xwnh0LUfLH813B35Md7cRXdmFCfPMKNxU8/edit" in self.spreadsheet_url:
             sheet_name = "Productos"
         else:
             sheet_name = "PRODUCTOS"
-
         sheet = sh.worksheet(sheet_name)
-        all_vals = sheet.get_all_values()
+        all_vals = _with_retry(sheet.get_all_values)
         if not all_vals or len(all_vals) < 2:
             return pd.DataFrame(columns=all_vals[0] if all_vals else [])
         headers = all_vals[0]
@@ -268,16 +253,9 @@ def update_spreadsheet(spreadsheet_url, df):
     connector = SheetConnector(spreadsheet_url)
     connector.update_data(df)
 
-# ← NUEVO: Wrappers de alto nivel para clientes
+# Wrappers de alto nivel para clientes
 def get_clients_from_sheet(spreadsheet_url) -> pd.DataFrame:
-    """
-    Función auxiliar que devuelve el DataFrame de clientes.
-    """
     return SheetConnector(spreadsheet_url).get_clients()
 
 def add_client_to_sheet(spreadsheet_url, client_data: dict):
-    """
-    Función auxiliar que agrega un cliente dado un dict con sus datos.
-    """
     SheetConnector(spreadsheet_url).add_client(client_data)
-
