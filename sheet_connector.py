@@ -122,13 +122,16 @@ class SheetConnector:
         _with_retry(sheet.update, 'A1', data)
 
     def get_products(self) -> pd.DataFrame:
-        sh = self._open_spreadsheet()
-        # Si detectás otra plantilla podés cambiar el nombre de hoja aquí
-        sheet = _with_retry(sh.worksheet, "PRODUCTOS")
-        values = _with_retry(sheet.get_all_values)
-        if not values or len(values) < 2:
-            return pd.DataFrame(columns=values[0] if values else [])
-        headers, rows = values[0], values[1:]
+        sh = self.client.open_by_url(self.spreadsheet_url)
+        try:
+            sheet = sh.worksheet("PRODUCTOS")
+        except gspread.WorksheetNotFound:
+            sheet = sh.worksheet("Productos")  # fallback
+        all_vals = sheet.get_all_values()
+        if not all_vals or len(all_vals) < 2:
+            return pd.DataFrame(columns=all_vals[0] if all_vals else [])
+        headers = all_vals[0]
+        rows    = all_vals[1:]
         return pd.DataFrame(rows, columns=headers)
 
     # ---------------- CLIENTES ----------------
