@@ -13,6 +13,29 @@ from typing import List
 from pandas.api.types import CategoricalDtype
 import numpy as np
 
+import unicodedata, re
+
+def _norm_col(s: str) -> str:
+    # normaliza: quita saltos de línea, colapsa espacios, quita acentos, minúsculas
+    s = str(s).replace("\n", " ")
+    s = re.sub(r"\s+", " ", s).strip()
+    s = "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c))
+    return s.lower()
+
+def _find_col(df: pd.DataFrame, target: str) -> str | None:
+    tgt = _norm_col(target)
+    # 1) match exacto normalizado
+    for c in df.columns:
+        if _norm_col(c) == tgt:
+            return c
+    # 2) fallback específico para el ID interno (por si cambia formato)
+    if tgt == _norm_col("ID (Uso interno)"):
+        for c in df.columns:
+            n = _norm_col(c)
+            if "id" in n and "uso" in n and "interno" in n:
+                return c
+    return None
+
 def strip_parenthesis(text: str) -> str:
     """
     Elimina cualquier '(...)' del texto, incluyendo espacios previos.
@@ -76,75 +99,120 @@ def build_export_df(master_url: str, fudo_url: str) -> pd.DataFrame:
 
     # 2) Leo el sheet actual de Fudo (IDs ya existentes)
     fudo_conn = SheetConnector(fudo_url)
-    df_fudo   = fudo_conn.get_products()[["ID\n(Uso interno)", "Código"]]
+    df_fudo   = fudo_conn.get_products()
 
-    # 3) Hago merge para conservar IDs previos
-    df_merge = df_master.merge(
-        df_fudo,
-        how="left",
-        left_on="SKU",
-        right_on="Código"
-    ).rename(columns={"ID\n(Uso interno)": "ID_prev"})
+    # 2.a) Detecto nombres reales y estandarizo
+    id_col   = _find_col(df_fudo, "ID (Uso interno)")
+    code_col = _find_col(df_fudo, "Código")
 
-    # 4) Construyo la columna FINAL de IDs como ints o None
+    # Debug opcional
+    # st.write("Encabezados Fudo:", list(df_fudo.columns))
+    # st.write("ID detectada:", id_col, " — Código detectada:", code_col)
+
+    if not id_col or not code_col:
+        raise KeyError("No se encontraron columnas ‘ID (Uso interno)’ y/o ‘Código’ en la hoja de Fudo.")
+
+    df_fudo_sub = df_fudo[[id_col, code_col]].rename(
+        columns={id_col: "ID\n(Uso interno)", code_col: "Código"}
+    )
+
+    # 3) Merge para conservar IDs previos
+    df_merge = (
+        df_master
+        .merge(df_fudo_sub, how="left", left_on="SKU", right_on="Código")
+        .rename(columns={"ID\n(Uso interno)": "ID_prev"})
+    )
+
+    # 4) IDs finales como int o None
     def make_id(val):
-        if pd.isna(val):
-            return None           # celdas vacías → None
-        return int(val)           # valores existentes → enteros
+        if pd.isna(val) or str(val).strip() == "":
+            return None
+        return int(float(val))
 
     df_merge["ID\n(Uso interno)"] = df_merge["ID_prev"].apply(make_id)
 
-    st.write("▶️ STOCK dtype:", df_merge["STOCK"].dtype)
-    st.write("▶️ STOCK valores únicos:", df_merge["STOCK"].unique())
-    st.write("▶️ Ejemplo filas relevantes:", 
-            df_merge.loc[df_merge["SKU"].str.contains("AL-ALME"), 
-                        ["SKU","STOCK","ACTIVO"]])
-    
+    # 5) Activo_Fudo (activo=SI y stock != "0")
+    stock_str = df_merge.get("STOCK", "").astype(str).str.strip()
+    activo    = df_merge.get("ACTIVO", "").astype(str).str.upper().str.strip()
     df_merge["Activo_Fudo"] = np.where(
-        (df_merge["ACTIVO"].str.upper() == "SI") &
-        (df_merge["STOCK"]               != "0"),
-        "Si",
-        "No"
+        (activo == "SI") & (stock_str != "0"),
+        "Si", "No"
     )
 
-    # 5) Mapeo al template de Fudo
+    # 6) Mapeo al template de Fudo
     df_export = pd.DataFrame({
-        "ID\n(Uso interno)"             : df_merge["ID\n(Uso interno)"],
-        "Categoría*"                    : df_merge["CATEGORIA"],
-        "Subcategoría"                  : df_merge["SUBCATEGORIA"],
-        "Código"                        : df_merge["SKU"],
-        "Nombre*"                       : df_merge["PRODUCTO"],
-        "Descripción"                   : df_merge.get("DESCRIPCION", ""),
-        "Precio*"                       : df_merge["PRECIO VENTA"],
-        "Costo"                         : df_merge["COSTO"],
-        "Proveedor"                     : "",
-        "Activo\n(SÍ / NO)"             : df_merge["Activo_Fudo"],
-        "Favorito\n(SÍ / NO)"           : "No",
-        "Controlar Stock\n(SÍ / NO)"    : "No",
+        "ID\n(Uso interno)"              : df_merge["ID\n(Uso interno)"],
+        "Categoría*"                     : df_merge.get("CATEGORIA", ""),
+        "Subcategoría"                   : df_merge.get("SUBCATEGORIA", ""),
+        "Código"                         : df_merge["SKU"],
+        "Nombre*"                        : df_merge["PRODUCTO"],
+        "Descripción"                    : df_merge.get("DESCRIPCION", ""),
+        "Precio*"                        : df_merge["PRECIO VENTA"],
+        "Costo"                          : df_merge["COSTO"],
+        "Proveedor"                      : "",
+        "Activo\n(SÍ / NO)"              : df_merge["Activo_Fudo"],
+        "Favorito\n(SÍ / NO)"            : "No",
+        "Controlar Stock\n(SÍ / NO)"     : "No",
         "Permitir vender solo\n(SÍ / NO)": "Si",
-        "Posición"                      : df_merge.get("Posición", None)
+        "Posición"                       : df_merge.get("Posición", None)
     })
 
-    # 6) Ordeno y devuelvo
+    # 7) Orden final
     return (
         df_export
-        .sort_values(
-            ["Categoría*", "Subcategoría", "Nombre*"],
-            key=lambda col: col.map(clean_for_sort)
-        )
+        .sort_values(["Categoría*", "Subcategoría", "Nombre*"],
+                     key=lambda col: col.map(clean_for_sort))
         .reset_index(drop=True)
     )
 
 def upload_export_df(df_export: pd.DataFrame, fudo_url: str):
     """
-    Limpia y escribe df_export en la pestaña Productos (índice 1)
-    de tu Google Sheet de Fudo.
+    Escribe df_export en la pestaña Productos (sin limpiar previamente).
+    Hace sanitización de valores para que el JSON sea válido.
     """
+    import numpy as np
+    import pandas as pd
+    from sheet_connector import SheetConnector
+
     fudo_conn = SheetConnector(fudo_url)
     sh = fudo_conn.client.open_by_url(fudo_url)
-    prod_ws = sh.worksheets()[1]
-    prod_ws.clear()
-    data = [df_export.columns.tolist()] + df_export.values.tolist()
+    # Mejor por nombre si existe; si no, por índice 1 como tenías
+    try:
+        prod_ws = sh.worksheet("Productos")
+    except Exception:
+        prod_ws = sh.worksheets()[1]
+
+    # 1) Copia y sanitización
+    df = df_export.copy()
+
+    # Reemplazar inf/-inf por NaN y luego todo NaN -> ""
+    df = df.replace([np.inf, -np.inf], np.nan).where(pd.notnull(df), "")
+
+    # Asegurar strings seguros en columnas de texto y números nativos en numéricas
+    # (por si quedaron dtypes raros)
+    def to_primitive(x):
+        import numpy as np
+        import pandas as pd
+        if x is None:
+            return ""
+        # Pandas Timestamp -> string ISO
+        if isinstance(x, pd.Timestamp):
+            return x.isoformat()
+        # NumPy -> Python
+        if isinstance(x, (np.integer,)):
+            return int(x)
+        if isinstance(x, (np.floating,)):
+            if np.isnan(x) or np.isinf(x):
+                return ""
+            return float(x)
+        # Dejar strings y otros tipos simples tal cual
+        return x
+
+    data = [df.columns.tolist()]
+    for _, row in df.iterrows():
+        data.append([to_primitive(v) for v in row.tolist()])
+
+    # 2) Actualizar SIN borrar antes (evita dejar la hoja vacía si algo falla)
     prod_ws.update(values=data, range_name="A1")
 
 def download_fudo_xlsx(fudo_id: str, creds_json: Union[dict, str]) -> bytes:
@@ -199,80 +267,66 @@ def apply_category_order_and_position(
 
 def build_export_df_from_dfs(df_master: pd.DataFrame, df_template: pd.DataFrame) -> pd.DataFrame:
     """
-    Igual que build_export_df, pero usando los DataFrames que ya tienes en sesión:
-    - df_master: tu hoja maestra raw
-    - df_template: df de Productos de Fudo con IDs asignados
+    Igual que build_export_df, pero usando los DataFrames ya cargados en sesión:
+    - df_master: hoja maestra raw
+    - df_template: DataFrame de la hoja Fudo (pestaña Productos) con IDs asignados
     """
     # 1) Exploto fracciones
     df_master_exp = explode_fracciones(df_master.copy())
 
-    
-        # 2) Merge para heredar IDs
+    # 2) Detecto nombres reales en el template y estandarizo
+    id_col   = _find_col(df_template, "ID (Uso interno)")
+    code_col = _find_col(df_template, "Código")
+    if not id_col or not code_col:
+        raise KeyError("No se encontraron columnas ‘ID (Uso interno)’ y/o ‘Código’ en el template de Fudo.")
+
+    df_temp_sub = df_template[[id_col, code_col]].rename(
+        columns={id_col: "ID\n(Uso interno)", code_col: "Código"}
+    )
+
+    # 3) Merge para heredar IDs
     df_merge = (
         df_master_exp
-        .merge(
-            df_template[["ID\n(Uso interno)", "Código"]],
-            how="left",
-            left_on="SKU",
-            right_on="Código"
-        )
+        .merge(df_temp_sub, how="left", left_on="SKU", right_on="Código")
         .rename(columns={"ID\n(Uso interno)": "ID_prev"})
     )
 
-    st.write("▶️ [DEBUG builder] STOCK dtype:",   df_merge["STOCK"].dtype)
-    st.write("▶️ [DEBUG builder] STOCK únicos:",   df_merge["STOCK"].unique())
-    st.write("▶️ [DEBUG builder] filas AL-ALME:",
-             df_merge[df_merge["SKU"].str.contains("AL-ALME")][["SKU","STOCK","ACTIVO"]])
-    
-    stock_str = df_merge["STOCK"].astype(str).str.strip()
-
-    # 3) Asigno la columna final de IDs (enteros o None)
+    # 4) IDs finales como int o None
     def make_id(x):
-        return int(x) if pd.notna(x) else None
+        return int(float(x)) if pd.notna(x) and str(x).strip() != "" else None
 
     df_merge["ID\n(Uso interno)"] = df_merge["ID_prev"].apply(make_id)
 
+    # 5) Activo_Fudo (activo=SI y stock != "0")
+    stock_str = df_merge.get("STOCK", "").astype(str).str.strip()
+    activo    = df_merge.get("ACTIVO", "").astype(str).str.upper().str.strip()
     df_merge["Activo_Fudo"] = np.where(
-        (df_merge["ACTIVO"].str.upper()=="SI") & (stock_str != "0"),
-        "Si",
-         "No"
+        (activo == "SI") & (stock_str != "0"),
+        "Si", "No"
     )
 
-    st.write("▶️ [DEBUG builder] Activo_Fudo únicos:", 
-         df_merge["Activo_Fudo"].unique())
-    
-    st.write("▶️ [DEBUG builder] filas AL-ALME con Activo_Fudo:", 
-         df_merge
-           .loc[df_merge["SKU"].str.contains("AL-ALME"), 
-                ["SKU","STOCK","ACTIVO","Activo_Fudo"]])
-
-
-    # 4) Mapeo al formato Fudo
+    # 6) Mapeo al formato Fudo
     df_export = pd.DataFrame({
-        "ID\n(Uso interno)"             : df_merge["ID\n(Uso interno)"],
-        "Categoría*"                    : df_merge["CATEGORIA"],
-        "Subcategoría"                  : df_merge["SUBCATEGORIA"],
-        "Código"                        : df_merge["SKU"],
-        "Nombre*"                       : df_merge["PRODUCTO"],
-        "Descripción"                   : df_merge.get("DESCRIPCION", ""),
-        "Precio*"                       : df_merge["PRECIO VENTA"],
-        "Costo"                         : df_merge["COSTO"],
-        "Proveedor"                     : "",
-        "Activo\n(SÍ / NO)"             : df_merge["Activo_Fudo"],
-        "Favorito\n(SÍ / NO)"           : "No",
-        "Controlar Stock\n(SÍ / NO)"    : "No",
+        "ID\n(Uso interno)"              : df_merge["ID\n(Uso interno)"],
+        "Categoría*"                     : df_merge.get("CATEGORIA", ""),
+        "Subcategoría"                   : df_merge.get("SUBCATEGORIA", ""),
+        "Código"                         : df_merge["SKU"],
+        "Nombre*"                        : df_merge["PRODUCTO"],
+        "Descripción"                    : df_merge.get("DESCRIPCION", ""),
+        "Precio*"                        : df_merge["PRECIO VENTA"],
+        "Costo"                          : df_merge["COSTO"],
+        "Proveedor"                      : "",
+        "Activo\n(SÍ / NO)"              : df_merge["Activo_Fudo"],
+        "Favorito\n(SÍ / NO)"            : "No",
+        "Controlar Stock\n(SÍ / NO)"     : "No",
         "Permitir vender solo\n(SÍ / NO)": "Si",
-        "Posición"                      : df_merge.get("Posición", None)
+        "Posición"                       : df_merge.get("Posición", None)
     })
 
-    
-
-    # 5) Ordeno y limpio índice
+    # 7) Orden final
     return (
         df_export
-        .sort_values(
-            ["Categoría*", "Subcategoría", "Nombre*"],
-            key=lambda col: col.map(clean_for_sort)
-        )
+        .sort_values(["Categoría*", "Subcategoría", "Nombre*"],
+                     key=lambda col: col.map(clean_for_sort))
         .reset_index(drop=True)
     )
