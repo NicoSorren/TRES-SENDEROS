@@ -165,55 +165,162 @@ def build_export_df(master_url: str, fudo_url: str) -> pd.DataFrame:
         .reset_index(drop=True)
     )
 
-def upload_export_df(df_export: pd.DataFrame, fudo_url: str):
-    """
-    Escribe df_export en la pestaña Productos (sin limpiar previamente).
-    Hace sanitización de valores para que el JSON sea válido.
-    """
-    import numpy as np
-    import pandas as pd
-    from sheet_connector import SheetConnector
+# fudo_manager.py
+import time
+import math
+from typing import Optional
 
-    fudo_conn = SheetConnector(fudo_url)
-    sh = fudo_conn.client.open_by_url(fudo_url)
-    # Mejor por nombre si existe; si no, por índice 1 como tenías
-    try:
-        prod_ws = sh.worksheet("Productos")
-    except Exception:
-        prod_ws = sh.worksheets()[1]
+import numpy as np
+import pandas as pd
 
-    # 1) Copia y sanitización
+from sheet_connector import SheetConnector
+
+
+def upload_export_df(
+    df_export: pd.DataFrame,
+    fudo_url: str,
+    worksheet_name: str = "Productos",
+    batch_rows: int = 500,          # tamaño de bloque por update
+    max_retries: int = 5,           # reintentos ante APIError o timeouts
+    backoff_sec: float = 1.0,       # espera base entre reintentos
+    progress_cb: Optional[callable] = None,  # opcional: función(progress: float)
+):
+    """
+    Sube df_export a la hoja 'worksheet_name' del Google Sheet Fudo en forma robusta e idempotente.
+
+    1) Sanitiza valores (sin NaN/Inf/np types/NaT).
+    2) Escribe encabezado en A1.
+    3) Escribe filas en lotes (A{row} anclado).
+    4) Limpia el 'tail' sobrante al final (idempotente).
+    5) Reintenta con backoff si hay rate-limit/errores transitorios.
+
+    Parámetros:
+      - df_export: DataFrame final con las columnas exactas requeridas por Fudo.
+      - fudo_url: URL del Google Sheet de Fudo.
+      - worksheet_name: nombre de la pestaña destino (por defecto "Productos").
+      - batch_rows: filas por bloque (500–1000 es razonable).
+      - max_retries: cantidad de reintentos por bloque.
+      - backoff_sec: segundos base de espera entre reintentos.
+      - progress_cb: función opcional para reportar progreso (0.0–1.0).
+    """
+
+    # -------- 0) Preparación/saneamiento --------
     df = df_export.copy()
 
-    # Reemplazar inf/-inf por NaN y luego todo NaN -> ""
+    # Recomendado: unicidad por Código antes de escribir
+    if "Código" in df.columns:
+        df = df.drop_duplicates(subset=["Código"], keep="first")
+
+    # Reemplazar inf/-inf por NaN y luego NaN -> ""
     df = df.replace([np.inf, -np.inf], np.nan).where(pd.notnull(df), "")
 
-    # Asegurar strings seguros en columnas de texto y números nativos en numéricas
-    # (por si quedaron dtypes raros)
+    # Asegurar que no queden 'nan' string en textos
+    for col in df.columns:
+        if pd.api.types.is_object_dtype(df[col].dtype):
+            df[col] = (
+                df[col]
+                .astype(str)
+                .str.replace("nan", "", regex=False)
+                .str.replace("NaT", "", regex=False)
+            )
+
+    # Convertir valores a tipos JSON-seguros (primitivos de Python)
     def to_primitive(x):
-        import numpy as np
-        import pandas as pd
+        # None -> ""
         if x is None:
             return ""
-        # Pandas Timestamp -> string ISO
+        # pandas NA/NaN -> ""
+        if pd.isna(x):
+            return ""
+        # pandas Timestamp -> ISO
         if isinstance(x, pd.Timestamp):
             return x.isoformat()
-        # NumPy -> Python
+        # numpy -> python
         if isinstance(x, (np.integer,)):
             return int(x)
         if isinstance(x, (np.floating,)):
-            if np.isnan(x) or np.isinf(x):
-                return ""
+            # por las dudas, ya mapeamos NaN arriba, pero re-chequeamos
             return float(x)
-        # Dejar strings y otros tipos simples tal cual
+        if isinstance(x, (np.bool_, bool)):
+            return bool(x)
+        # resto: dejar como string/plano
         return x
 
-    data = [df.columns.tolist()]
-    for _, row in df.iterrows():
-        data.append([to_primitive(v) for v in row.tolist()])
+    header = [str(c) for c in df.columns.tolist()]
+    rows = [[to_primitive(v) for v in row] for row in df.astype(object).values.tolist()]
 
-    # 2) Actualizar SIN borrar antes (evita dejar la hoja vacía si algo falla)
-    prod_ws.update(values=data, range_name="A1")
+    # -------- 1) Abrir worksheet destino --------
+    conn = SheetConnector(fudo_url)
+    sh = conn.client.open_by_url(fudo_url)
+    try:
+        ws = sh.worksheet(worksheet_name)
+    except Exception:
+        # fallback: segunda hoja (como en tu lógica anterior)
+        ws = sh.worksheets()[1]
+
+    # -------- 2) Escribir encabezado en A1 --------
+    _retry_update(ws, [header], "A1", max_retries=max_retries, backoff_sec=backoff_sec)
+
+    # -------- 3) Escribir filas en lotes --------
+    total = len(rows)
+    if total == 0:
+        # si no hay filas, limpiar todo debajo de encabezado
+        try:
+            ws.batch_clear([f"A2:ZZ100000"])
+        except Exception:
+            pass
+        if progress_cb:
+            progress_cb(1.0)
+        return
+
+    start_row = 2
+    blocks = math.ceil(total / batch_rows)
+
+    for b in range(blocks):
+        i0 = b * batch_rows
+        i1 = min(total, i0 + batch_rows)
+        block = rows[i0:i1]
+
+        # rango de inicio del bloque
+        range_anchor = f"A{start_row}"
+        _retry_update(ws, block, range_anchor, max_retries=max_retries, backoff_sec=backoff_sec)
+
+        start_row += len(block)
+
+        if progress_cb:
+            progress_cb((i1) / total)
+
+    # -------- 4) Limpiar tail sobrante (idempotente) --------
+    # limpia desde la fila siguiente al último bloque hasta un tope alto
+    try:
+        ws.batch_clear([f"A{start_row}:ZZ100000"])
+    except Exception:
+        # si falla la limpieza, no abortamos: ya escribimos lo necesario
+        pass
+
+    if progress_cb:
+        progress_cb(1.0)
+
+
+def _retry_update(ws, values, range_anchor, max_retries=5, backoff_sec=1.0):
+    """
+    Envuelve ws.update con reintentos y espera incremental ante errores transitorios de la API.
+    """
+    attempt = 0
+    while True:
+        try:
+            # Importante: values puede ser list[list] (bloque) o list (una fila)
+            # gspread espera list[list] para múltiples filas
+            payload = values if (values and isinstance(values[0], list)) else [values]
+            ws.update(payload, range_anchor)
+            return
+        except Exception as e:
+            attempt += 1
+            if attempt > max_retries:
+                # Re-lanzamos el último error
+                raise
+            # Espera incremental (1x, 2x, 3x, …)
+            time.sleep(backoff_sec * attempt)
 
 def download_fudo_xlsx(fudo_id: str, creds_json: Union[dict, str]) -> bytes:
     """
