@@ -8,20 +8,25 @@ def backup_page():
     st.title("Sistema de Backups")
 
     if st.button("Realizar Backup"):
-        try:
-            result = guardar_backup()
-            if result["path"]:
-                st.success(f"Backup guardado en: {result['path']}")
-            else:
-                st.info("Backup generado en memoria (entorno web). Descargalo abajo.")
-            st.download_button(
-                "Descargar backup (XLSX)",
-                data=result["bytes"],
-                file_name=result["filename"],
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-        except Exception as e:
-            st.error(str(e))
+        result = guardar_backup()
+        if result["path"]:
+            st.success(f"Backup local: {result['path']}")
+        else:
+            st.info("Entorno web: no hay Escritorio. Usá la descarga.")
+
+        st.download_button(
+            "Descargar backup (XLSX)",
+            data=result["bytes"],
+            file_name=result["filename"],
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+        up = result.get("uploaded")
+        if isinstance(up, dict) and up.get("ok"):
+            st.success(f"Subido a Drive: [{up['name']}]({up['url']})")
+        else:
+            st.warning(f"No pude subir automáticamente a Drive. Detalle: {up.get('error') if isinstance(up, dict) else 'no-config'}")
+
 
 
     st.markdown("---")
