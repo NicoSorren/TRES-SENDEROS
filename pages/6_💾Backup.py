@@ -23,9 +23,15 @@ def backup_page():
 
         up = result.get("uploaded")
         if isinstance(up, dict) and up.get("ok"):
-            st.success(f"Subido a Drive: [{up['name']}]({up['url']})")
+            if up.get("non_json"):
+                st.info("Subido a Drive (respuesta no-JSON del Web App). Verificá la carpeta de Backups.")
+            else:
+                st.success(f"Subido a Drive: [{up['name']}]({up['url']})")
+        elif up is None:
+            st.info("Subida a Drive no configurada. Agregá [backup_upload] en secrets si querés automatizarlo.")
         else:
-            st.warning(f"No pude subir automáticamente a Drive. Detalle: {up.get('error') if isinstance(up, dict) else 'no-config'}")
+            st.warning(f"No pude subir automáticamente a Drive. Detalle: {up.get('error')}")
+
 
 
 

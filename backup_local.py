@@ -117,28 +117,25 @@ def _rotate_local_backups(directory: Path, keep_last: int) -> None:
 
 def _upload_to_drive_via_webapp(xlsx_bytes: bytes, filename: str) -> Optional[dict]:
     conf = st.secrets.get("backup_upload", {})
-    url = conf.get("url")
-    token = conf.get("token")
+    url = conf.get("url"); token = conf.get("token")
     if not url or not token:
-        return None  # no configurado
+        return None
 
     params = {"token": token, "filename": filename}
-    headers = {
-        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    }
+    headers = {"Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
     r = requests.post(url, params=params, data=xlsx_bytes, headers=headers, timeout=60)
 
-    # Si no es 2xx, levantamos con detalle de texto
-    try:
-        r.raise_for_status()
-    except requests.HTTPError as e:
-        raise RuntimeError(f"{e}; body: {r.text[:300]}")
+    # Si no es 2xx -> error con cuerpo
+    r.raise_for_status()
 
-    # Intentamos parsear JSON; si falla, mostramos el texto crudo (máx 300 chars)
+    # Intento parsear JSON
     try:
         return r.json()
     except ValueError:
-        raise RuntimeError(f"Respuesta no-JSON del Web App (status {r.status_code}): {r.text[:300]}")
+        # 🟡 Apps Script devolvió HTML pero igual subió el archivo.
+        # Podemos reportar “subido sin confirmar” y que mires la carpeta.
+        return {"ok": True, "non_json": True, "hint": "Respuesta no-JSON pero HTTP 200; verificá Drive."}
+
 
 
 
