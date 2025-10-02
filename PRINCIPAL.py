@@ -3,6 +3,7 @@
 import streamlit as st
 from PIL import Image
 from datetime import date
+from backup_local import guardar_backup
 
 # PRINCIPAL.py (arriba del todo, tras los imports)  
 from sheet_connector import get_data_from_sheet  
@@ -97,6 +98,37 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 st.markdown("---")
+
+def _do_auto_backup_on_session_start():
+    # Evita repetirlo en cada rerun de Streamlit
+    if st.session_state.get("_auto_backup_done"):
+        return
+    st.session_state["_auto_backup_done"] = True  # marcar primero para evitar dobles
+
+    # (Opcional) switch por secrets para activar/desactivar sin tocar código
+    if str(st.secrets.get("backup_local", {}).get("auto_on_session", "true")).lower() not in ("1", "true", "yes"):
+        return
+
+    with st.spinner("Generando backup automático..."):
+        try:
+            result = guardar_backup()
+            # Mensajes útiles
+            if result.get("uploaded", {}).get("ok"):
+                up = result["uploaded"]
+                if up.get("non_json"):
+                    st.toast("Backup auto: subido a Drive (respuesta no-JSON). Verificá la carpeta.", icon="✅")
+                else:
+                    st.toast(f"Backup auto: subido a Drive → {up.get('name')}", icon="✅")
+            elif result.get("path"):
+                st.toast(f"Backup auto local: {result['path']}", icon="✅")
+            else:
+                # Sin escritorio y sin WebApp configurada → al menos deja botón de descarga en la página de Backups
+                st.toast("Backup auto generado (descargalo desde la página de Backups).", icon="ℹ️")
+        except Exception as e:
+            st.warning(f"No se pudo completar el backup automático: {e}")
+
+# Llamalo una vez al arrancar la app
+_do_auto_backup_on_session_start()
 
 # 7) Botón para ir a Gestión de Productos
 if st.button("➡️ Ir a Gestión de Productos"):
