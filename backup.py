@@ -3,107 +3,100 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import datetime as dt
+from io import BytesIO
 import pandas as pd
 import streamlit as st
-
-# Usamos tu conector para leer TODAS las pestañas que interesan
 from sheet_connector import SheetConnector
 
-# ---------- Helpers de ruta ----------
-
+# ---------- Rutas locales (solo cuando hay escritorio) ----------
 def _desktop_dir() -> Path:
-    """
-    Devuelve la carpeta Escritorio del usuario de forma robusta:
-    - Windows: Desktop / OneDrive/Desktop / OneDrive/Escritorio / Escritorio
-    - macOS/Linux: ~/Desktop o ~/Escritorio si existe
-    """
     home = Path.home()
-    candidates = [
-        home / "Desktop",
-        home / "Escritorio",
-        home / "OneDrive" / "Desktop",
-        home / "OneDrive" / "Escritorio",
-    ]
-    for c in candidates:
+    for c in [home/"Desktop", home/"Escritorio", home/"OneDrive"/"Desktop", home/"OneDrive"/"Escritorio"]:
         if c.exists():
             return c
-    # fallback: home
-    return home
+    return home  # fallback
 
 def _backup_root() -> Path:
-    """Carpeta final de backups en el Escritorio."""
     root = _desktop_dir() / "BACKUP TRES SENDEROS"
-    root.mkdir(parents=True, exist_ok=True)
+    try:
+        root.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        # en la nube puede fallar (no hay escritorio); ignoramos
+        pass
     return root
 
 def _now_str() -> str:
     return dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-def _master_url_from_secrets() -> str:
-    """
-    Tu SheetConnector recibe una URL completa.
-    En secrets guardamos el ID: armamos la URL estándar con ese ID.
-    """
-    try:
-        master_id = st.secrets["backup"]["master_spreadsheet_id"]
-    except Exception as e:
-        raise RuntimeError("No encuentro [backup].master_spreadsheet_id en secrets.toml") from e
+def _master_url() -> str:
+    master_id = st.secrets["backup"]["master_spreadsheet_id"]
     return f"https://docs.google.com/spreadsheets/d/{master_id}/edit#gid=0"
 
-# ---------- API pública ----------
-
-def guardar_backup(_df_ignorado=None) -> str:
-    """
-    Crea un archivo XLSX local con todas las pestañas clave del maestro.
-    Devuelve la ruta absoluta del archivo creado.
-    Compatibilidad: acepta un primer arg (df) pero lo ignora.
-    """
-    # 1) Dónde guardamos
-    out_dir = _backup_root()
-    out_path = out_dir / f"TS_MASTER_{_now_str()}.xlsx"
-
-    # 2) Conectamos al maestro y leemos todas las hojas relevantes
-    url = _master_url_from_secrets()
+# ---------- Core ----------
+def _collect_dataframes() -> dict[str, pd.DataFrame]:
+    """Lee las hojas relevantes del maestro usando tu SheetConnector."""
+    url = _master_url()
     conn = SheetConnector(url)
+    dfs: dict[str, pd.DataFrame] = {}
 
-    # Preparamos getters de cada pestaña (se llaman si existen)
-    getters = {
-        "PRODUCTOS": getattr(conn, "get_products", None),
-        "CLIENTES": getattr(conn, "get_clients", None),
-        "REMITOS": getattr(conn, "get_remitos", None),
-        "DETALLE_REMITOS": getattr(conn, "get_remito_items", None),
-        "CATEGORIAS": getattr(conn, "get_categories", None),
-        "SUBCATEGORIAS": getattr(conn, "get_subcategories", None),
-    }
+    def safe(getter, name):
+        try:
+            df = getter()
+        except Exception:
+            df = pd.DataFrame()
+        dfs[name] = df if df is not None else pd.DataFrame()
 
-    # 3) Escribimos el XLSX con openpyxl
-    with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
-        wrote_any = False
-        for sheet_name, getter in getters.items():
-            if getter is None:
-                continue
-            try:
-                df = getter()
-            except Exception:
-                # Si hay una hoja que todavía no implementaste, seguimos
-                df = None
-            if df is None:
-                df = pd.DataFrame()
-            df.to_excel(writer, sheet_name=sheet_name, index=False)
-            wrote_any = True
+    if hasattr(conn, "get_products"):       safe(conn.get_products, "PRODUCTOS")
+    if hasattr(conn, "get_clients"):        safe(conn.get_clients, "CLIENTES")
+    if hasattr(conn, "get_remitos"):        safe(conn.get_remitos, "REMITOS")
+    if hasattr(conn, "get_remito_items"):   safe(conn.get_remito_items, "DETALLE_REMITOS")
+    if hasattr(conn, "get_categories"):     safe(conn.get_categories, "CATEGORIAS")
+    if hasattr(conn, "get_subcategories"):  safe(conn.get_subcategories, "SUBCATEGORIAS")
 
-        if not wrote_any:
-            # Como mínimo respaldamos el df de sesión si existiera
-            df_sess = st.session_state.get("df", pd.DataFrame())
-            df_sess.to_excel(writer, sheet_name="PRODUCTOS", index=False)
+    # fallback si no trajo nada
+    if not dfs:
+        dfs["PRODUCTOS"] = st.session_state.get("df", pd.DataFrame())
+    return dfs
 
-    return str(out_path.resolve())
+# ---------- API pública ----------
+def guardar_backup(*_args, **_kwargs) -> dict:
+    """
+    Crea un backup y devuelve:
+      {"path": <ruta_local_o_None>, "bytes": <xlsx_bytes>, "filename": <nombre.xlsx>}
+    - Siempre produce bytes para descarga.
+    - Si es posible, además guarda un .xlsx en Escritorio/BACKUP TRES SENDEROS.
+    Acepta args/kwargs extra para ser compatible con llamadas anteriores.
+    """
+    dfs = _collect_dataframes()
+    fname = f"TS_MASTER_{_now_str()}.xlsx"
 
+    # 1) Siempre construimos el XLSX en memoria
+    buf = BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as writer:
+        for sheet, df in dfs.items():
+            df.to_excel(writer, sheet_name=sheet, index=False)
+    buf.seek(0)
+    xlsx_bytes = buf.getvalue()
+
+    # 2) Intentamos guardar local (solo si hay escritorio/escritura)
+    saved_path = None
+    try:
+        out_dir = _backup_root()
+        out_path = out_dir / fname
+        # puede fallar en cloud: carpeta no existe o es read-only
+        with open(out_path, "wb") as f:
+            f.write(xlsx_bytes)
+        saved_path = str(out_path.resolve())
+    except Exception:
+        saved_path = None  # estamos probablemente en la nube; solo descarga
+
+    return {"path": saved_path, "bytes": xlsx_bytes, "filename": fname}
 
 def listar_backups() -> list[str]:
-    """
-    Lista rutas absolutas de los archivos .xlsx en la carpeta de backups (ordenados desc por fecha).
-    """
+    """Lista backups locales (si existen). En cloud normalmente quedará vacío."""
     root = _backup_root()
-    files = sorted(root.glob("*.xlsx"), key=lambda p: p.stat().st_mtime, reverse=True)
-    return [str(p.resolve()) for p in files]
+    try:
+        files = sorted(root.glob("*.xlsx"), key=lambda p: p.stat().st_mtime, reverse=True)
+        return [str(p.resolve()) for p in files]
+    except Exception:
+        return []

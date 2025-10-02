@@ -7,21 +7,29 @@ def backup_page():
 
     if st.button("Realizar Backup"):
         try:
-            filepath = guardar_backup(st.session_state.get("df"))
-            st.success(f"Backup guardado en: {filepath}")
+            result = guardar_backup()  # <-- sin pasar argumentos
+            if result["path"]:
+                st.success(f"Backup guardado en: {result['path']}")
+            else:
+                st.info("Backup generado en memoria (entorno web). Descargalo abajo.")
+            st.download_button(
+                "Descargar backup (XLSX)",
+                data=result["bytes"],
+                file_name=result["filename"],
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
         except Exception as e:
             st.error(str(e))
 
     st.markdown("---")
     st.subheader("Backups existentes")
-
     try:
         backups = listar_backups()
         if backups:
             for p in backups:
                 st.write(p)
         else:
-            st.info("No se encontraron backups.")
+            st.info("No se encontraron backups locales (en entorno web no hay Escritorio).")
     except Exception as e:
         st.error(f"No se pudieron listar los backups: {e}")
 
