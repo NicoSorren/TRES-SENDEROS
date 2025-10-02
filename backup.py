@@ -1,130 +1,109 @@
 # backup.py
-import datetime
-from typing import List, Dict, Optional
-import json
+from __future__ import annotations
+import os
+from pathlib import Path
+import datetime as dt
+import pandas as pd
 import streamlit as st
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 
+# Usamos tu conector para leer TODAS las pestañas que interesan
+from sheet_connector import SheetConnector
 
-# ===== Helpers de autenticación =====
-def _drive_service():
-    # 👇 Tomamos el string JSON desde secrets y lo convertimos a dict
-    raw = st.secrets["gcp_service_account"].get("json")
-    if not raw:
-        raise RuntimeError("Falta gcp_service_account.json en secrets.toml")
+# ---------- Helpers de ruta ----------
 
-    creds_info = json.loads(raw)  # <-- clave del fix
-    scopes = ["https://www.googleapis.com/auth/drive"]
-    credentials = service_account.Credentials.from_service_account_info(
-        creds_info, scopes=scopes
-    )
-    return build("drive", "v3", credentials=credentials, cache_discovery=False)
-
-def _now_str():
-    import datetime
-    return datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-# ===== API =====
-def guardar_backup() -> Dict:
+def _desktop_dir() -> Path:
     """
-    Crea una copia del Spreadsheet maestro dentro de la carpeta de backups.
-    Devuelve dict con id, name y webViewLink.
+    Devuelve la carpeta Escritorio del usuario de forma robusta:
+    - Windows: Desktop / OneDrive/Desktop / OneDrive/Escritorio / Escritorio
+    - macOS/Linux: ~/Desktop o ~/Escritorio si existe
     """
-    drive = _drive_service()
-    master_id = st.secrets["backup"]["master_spreadsheet_id"]
-    folder_id = st.secrets["backup"]["folder_id"]
+    home = Path.home()
+    candidates = [
+        home / "Desktop",
+        home / "Escritorio",
+        home / "OneDrive" / "Desktop",
+        home / "OneDrive" / "Escritorio",
+    ]
+    for c in candidates:
+        if c.exists():
+            return c
+    # fallback: home
+    return home
 
-    # Nombre tipo: TS_MASTER_YYYY-MM-DD_HH-MM-SS
-    new_name = f"TS_MASTER_{_now_str()}"
+def _backup_root() -> Path:
+    """Carpeta final de backups en el Escritorio."""
+    root = _desktop_dir() / "BACKUP TRES SENDEROS"
+    root.mkdir(parents=True, exist_ok=True)
+    return root
 
-    body = {
-        "name": new_name,
-        "parents": [folder_id],   # ubicación: carpeta de backups
-    }
+def _now_str() -> str:
+    return dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
+def _master_url_from_secrets() -> str:
+    """
+    Tu SheetConnector recibe una URL completa.
+    En secrets guardamos el ID: armamos la URL estándar con ese ID.
+    """
     try:
-        # files.copy mantiene el tipo nativo (Google Sheets)
-        new_file = (
-            drive.files()
-            .copy(fileId=master_id, body=body, fields="id, name, webViewLink, createdTime")
-            .execute()
-        )
-    except HttpError as e:
-        # Burbujea con mensaje claro para la UI
-        raise RuntimeError(f"Error al copiar el Spreadsheet maestro: {e}")
+        master_id = st.secrets["backup"]["master_spreadsheet_id"]
+    except Exception as e:
+        raise RuntimeError("No encuentro [backup].master_spreadsheet_id en secrets.toml") from e
+    return f"https://docs.google.com/spreadsheets/d/{master_id}/edit#gid=0"
 
-    # Opcional: limpieza de backups antiguos
-    _auto_cleanup(drive)
+# ---------- API pública ----------
 
-    return {
-        "id": new_file["id"],
-        "name": new_file["name"],
-        "link": new_file.get("webViewLink", ""),
-        "createdTime": new_file.get("createdTime", ""),
+def guardar_backup(_df_ignorado=None) -> str:
+    """
+    Crea un archivo XLSX local con todas las pestañas clave del maestro.
+    Devuelve la ruta absoluta del archivo creado.
+    Compatibilidad: acepta un primer arg (df) pero lo ignora.
+    """
+    # 1) Dónde guardamos
+    out_dir = _backup_root()
+    out_path = out_dir / f"TS_MASTER_{_now_str()}.xlsx"
+
+    # 2) Conectamos al maestro y leemos todas las hojas relevantes
+    url = _master_url_from_secrets()
+    conn = SheetConnector(url)
+
+    # Preparamos getters de cada pestaña (se llaman si existen)
+    getters = {
+        "PRODUCTOS": getattr(conn, "get_products", None),
+        "CLIENTES": getattr(conn, "get_clients", None),
+        "REMITOS": getattr(conn, "get_remitos", None),
+        "DETALLE_REMITOS": getattr(conn, "get_remito_items", None),
+        "CATEGORIAS": getattr(conn, "get_categories", None),
+        "SUBCATEGORIAS": getattr(conn, "get_subcategories", None),
     }
 
+    # 3) Escribimos el XLSX con openpyxl
+    with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
+        wrote_any = False
+        for sheet_name, getter in getters.items():
+            if getter is None:
+                continue
+            try:
+                df = getter()
+            except Exception:
+                # Si hay una hoja que todavía no implementaste, seguimos
+                df = None
+            if df is None:
+                df = pd.DataFrame()
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+            wrote_any = True
 
-def listar_backups(max_items: int = 100) -> List[Dict]:
+        if not wrote_any:
+            # Como mínimo respaldamos el df de sesión si existiera
+            df_sess = st.session_state.get("df", pd.DataFrame())
+            df_sess.to_excel(writer, sheet_name="PRODUCTOS", index=False)
+
+    return str(out_path.resolve())
+
+
+def listar_backups() -> list[str]:
     """
-    Lista los archivos en la carpeta de backups (solo Google Sheets), ordenados por fecha desc.
-    Devuelve una lista de dicts con {id, name, createdTime, webViewLink}.
+    Lista rutas absolutas de los archivos .xlsx en la carpeta de backups (ordenados desc por fecha).
     """
-    drive = _drive_service()
-    folder_id = st.secrets["backup"]["folder_id"]
-
-    query = (
-        f"'{folder_id}' in parents and "
-        f"mimeType = 'application/vnd.google-apps.spreadsheet' and "
-        f"trashed = false"
-    )
-
-    results = (
-        drive.files()
-        .list(
-            q=query,
-            orderBy="createdTime desc",
-            pageSize=max_items,
-            fields="files(id, name, createdTime, webViewLink)",
-        )
-        .execute()
-    )
-
-    return results.get("files", [])
-
-
-def _auto_cleanup(drive) -> None:
-    """
-    Si backup.keep_last está definido, mantiene solo los N más recientes.
-    Borra silenciosamente el resto.
-    """
-    keep_last = int(st.secrets["backup"].get("keep_last", 0) or 0)
-    if keep_last <= 0:
-        return
-
-    folder_id = st.secrets["backup"]["folder_id"]
-    query = (
-        f"'{folder_id}' in parents and "
-        f"mimeType = 'application/vnd.google-apps.spreadsheet' and "
-        f"trashed = false"
-    )
-    res = (
-        drive.files()
-        .list(
-            q=query,
-            orderBy="createdTime desc",
-            pageSize=1000,
-            fields="files(id)",
-        )
-        .execute()
-    )
-    files = res.get("files", [])
-    to_delete = files[keep_last:]  # del (keep_last+1) en adelante
-
-    for f in to_delete:
-        try:
-            drive.files().delete(fileId=f["id"]).execute()
-        except HttpError:
-            # no frenamos el flujo por un fallo de limpieza
-            pass
+    root = _backup_root()
+    files = sorted(root.glob("*.xlsx"), key=lambda p: p.stat().st_mtime, reverse=True)
+    return [str(p.resolve()) for p in files]

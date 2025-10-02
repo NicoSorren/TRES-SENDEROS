@@ -7,8 +7,8 @@ def backup_page():
 
     if st.button("Realizar Backup"):
         try:
-            info = guardar_backup()
-            st.success(f"Backup creado: [{info['name']}]({info['link']})")
+            filepath = guardar_backup(st.session_state.get("df"))
+            st.success(f"Backup guardado en: {filepath}")
         except Exception as e:
             st.error(str(e))
 
@@ -18,8 +18,8 @@ def backup_page():
     try:
         backups = listar_backups()
         if backups:
-            for f in backups:
-                st.write(f"• [{f['name']}]({f.get('webViewLink','')}) — {f.get('createdTime','')}")
+            for p in backups:
+                st.write(p)
         else:
             st.info("No se encontraron backups.")
     except Exception as e:
