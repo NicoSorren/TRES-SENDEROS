@@ -116,26 +116,30 @@ def _rotate_local_backups(directory: Path, keep_last: int) -> None:
 # ================== Upload a Drive via Apps Script ==================
 
 def _upload_to_drive_via_webapp(xlsx_bytes: bytes, filename: str) -> Optional[dict]:
-    """
-    Sube el XLSX a tu Google Drive usando un Web App de Apps Script (usa TU cuota).
-    Requiere en secrets.toml:
-      [backup_upload]
-      url   = "https://script.google.com/macros/s/AKfycb.../exec"
-      token = "TU_TOKEN_SECRETO"
-    """
     conf = st.secrets.get("backup_upload", {})
     url = conf.get("url")
     token = conf.get("token")
     if not url or not token:
-        return None  # no configurado → seguimos sin subir
+        return None  # no configurado
 
     params = {"token": token, "filename": filename}
     headers = {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     }
     r = requests.post(url, params=params, data=xlsx_bytes, headers=headers, timeout=60)
-    r.raise_for_status()
-    return r.json()
+
+    # Si no es 2xx, levantamos con detalle de texto
+    try:
+        r.raise_for_status()
+    except requests.HTTPError as e:
+        raise RuntimeError(f"{e}; body: {r.text[:300]}")
+
+    # Intentamos parsear JSON; si falla, mostramos el texto crudo (máx 300 chars)
+    try:
+        return r.json()
+    except ValueError:
+        raise RuntimeError(f"Respuesta no-JSON del Web App (status {r.status_code}): {r.text[:300]}")
+
 
 
 # ================== API pública ==================
