@@ -1,7 +1,7 @@
 # backup.py
 import datetime
 from typing import List, Dict, Optional
-
+import json
 import streamlit as st
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -10,18 +10,21 @@ from googleapiclient.errors import HttpError
 
 # ===== Helpers de autenticación =====
 def _drive_service():
-    creds_info = st.secrets["gcp_service_account"]
+    # 👇 Tomamos el string JSON desde secrets y lo convertimos a dict
+    raw = st.secrets["gcp_service_account"].get("json")
+    if not raw:
+        raise RuntimeError("Falta gcp_service_account.json en secrets.toml")
+
+    creds_info = json.loads(raw)  # <-- clave del fix
     scopes = ["https://www.googleapis.com/auth/drive"]
     credentials = service_account.Credentials.from_service_account_info(
         creds_info, scopes=scopes
     )
     return build("drive", "v3", credentials=credentials, cache_discovery=False)
 
-
 def _now_str():
-    # Timestamp legible y ordenable
+    import datetime
     return datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
 
 # ===== API =====
 def guardar_backup() -> Dict:
