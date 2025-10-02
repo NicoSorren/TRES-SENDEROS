@@ -1,13 +1,15 @@
 # pages/6_💾Backup.py
 import streamlit as st
-from backup import guardar_backup, listar_backups
+# from backup import guardar_backup, listar_backups   # <- quitar
+from backup_local import guardar_backup, listar_backups  # <- usar este
+
 
 def backup_page():
     st.title("Sistema de Backups")
 
     if st.button("Realizar Backup"):
         try:
-            result = guardar_backup()  # <-- sin pasar argumentos
+            result = guardar_backup()
             if result["path"]:
                 st.success(f"Backup guardado en: {result['path']}")
             else:
@@ -20,6 +22,7 @@ def backup_page():
             )
         except Exception as e:
             st.error(str(e))
+
 
     st.markdown("---")
     st.subheader("Backups existentes")
