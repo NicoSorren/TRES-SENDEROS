@@ -4,6 +4,8 @@ import pandas as pd
 from numbers import Number
 from mix_manager import MixManager
 import math
+from utils_factors import parse_factor, is_factor_valid
+
 
 class ProductEditor:
     def __init__(self, dataframe):
@@ -21,17 +23,18 @@ class ProductEditor:
         def parse_moneda(val):
             if isinstance(val, Number):
                 return float(val)
-            s = str(val).replace("$", "").strip()
-            if "," in s:
-                # coma decimal: quito puntos de miles y cambio coma a punto
+            s = str(raw_factor).strip().replace("$", "").replace(" ", "")
+            if "," in s and "." in s:
+                # Formato tipo '1.234,56' → '1234.56'
                 s = s.replace(".", "").replace(",", ".")
-            else:
-                # sin coma: elimino todos los puntos (eran miles)
-                s = s.replace(".", "")
+            elif "," in s:
+                # Formato '1,50' → '1.50'
+                s = s.replace(",", ".")
+            # else: si no hay coma, asumimos que '.' es separador decimal y NO lo tocamos
             try:
-                return float(s)
+                factor0 = float(s)
             except:
-                return 0.0
+                factor0 = 1.0
 
         # 1) Selección de categoría (mantengo orden de la hoja)
         categorias = (
@@ -67,19 +70,10 @@ class ProductEditor:
         temp_data = {}
         for idx, row in df_cat.iterrows():
             # Parseo factor de la fila
-            raw_factor = row.get("FACTOR", 1)
-            if isinstance(raw_factor, (int, float)):
-                factor0 = raw_factor / 100 if raw_factor > 10 else float(raw_factor)
-            else:
-                s = str(raw_factor).strip().replace("$", "")
-                if "," in s:
-                    s = s.replace(".", "").replace(",", ".")
-                else:
-                    s = s.replace(".", "")
-                try:
-                    factor0 = float(s)
-                except:
-                    factor0 = 1.0
+            # Parseo factor de la fila (SIN corregir)
+            raw_factor = row.get("FACTOR", None)
+            factor0 = parse_factor(raw_factor)
+            factor_valid = is_factor_valid(factor0) if factor0 is not None else False
 
             init_name  = row.get("PRODUCTO", "")
             init_costo = int(parse_moneda(row.get("COSTO", 0)))
@@ -89,7 +83,8 @@ class ProductEditor:
             st.session_state.temp_data[idx] = {
                 "new_name": init_name,
                 "new_costo": init_costo,
-                "factor":   factor0,
+                "factor":   factor0 if factor0 is not None else 1.00,  # valor editable en UI
+                "factor_invalid": not factor_valid,                    # flag para avisar
                 "new_brand": init_brand,
                 "selected_stock": init_stock
             }
@@ -125,6 +120,10 @@ class ProductEditor:
                             key=f"costo_{idx}"
                         )
                     # Factor (decimal)
+                    # Aviso si el factor original/actual está fuera de rango
+                    if init.get("factor_invalid", False):
+                        st.error(f"Factor fuera de rango [1.00–2.00] en '{row['PRODUCTO']}'. Corrígelo antes de guardar.")
+
                     with c3:
                         factor = st.number_input(
                             "Factor",
@@ -175,6 +174,18 @@ class ProductEditor:
                     }
 
             save_button = st.form_submit_button("Guardar cambios en esta categoría")
+        # Revalidar todos los factores editados antes de guardar
+        invalid_items = []
+        for _idx, ch in temp_data.items():
+            f = parse_factor(ch["factor"])
+            if f is None or not is_factor_valid(f):
+                prod_name = ch.get("new_name", f"Idx:{_idx}")
+                invalid_items.append(f"- {prod_name}: {ch['factor']}")
+
+        if save_button:
+            if invalid_items:
+                st.error("No se puede guardar. Hay factores fuera de rango [1.00–2.00]:\n" + "\n".join(invalid_items))
+                st.stop()  # bloquea guardado
 
         # 5) Sincronizar session_state con los cambios
         st.session_state.temp_data.update(temp_data)

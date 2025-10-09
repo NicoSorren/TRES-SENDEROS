@@ -7,6 +7,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 import streamlit as st
 import pandas as pd
 import datetime
+from utils_factors import parse_factor, is_factor_valid
+
 
 # ---------------- Robustez: backoff & helpers ----------------
 
@@ -104,7 +106,23 @@ class SheetConnector:
         if "PRECIO VENTA" in df.columns:
             df["PRECIO VENTA"] = df["PRECIO VENTA"].apply(parse_price)
         if "FACTOR" in df.columns:
-            df["FACTOR"] = pd.to_numeric(df["FACTOR"], errors="coerce").round(2)
+            # Parseo SIN corregir y chequeo de rango
+            df["_FACTOR_PARSED_"] = df["FACTOR"].apply(parse_factor)
+            invalid_mask = df["_FACTOR_PARSED_"].isna() | (~df["_FACTOR_PARSED_"].apply(is_factor_valid))
+
+            if invalid_mask.any():
+                sample = df.loc[invalid_mask, ["PRODUCTO", "FACTOR"]].head(20)
+                st.warning(
+                    "Hay factores fuera de rango [1.00–2.00] o inválidos en la planilla. "
+                    "Corrígelos antes de generar precios/remitos (se bloquea la sincronización)."
+                )
+                # (Opcional) mostrar una muestra de los casos
+                st.dataframe(sample)
+
+            # Dejamos FACTOR como el valor parseado (puede quedar NaN si es inválido)
+            df["FACTOR"] = df["_FACTOR_PARSED_"]
+            df.drop(columns=["_FACTOR_PARSED_"], inplace=True)
+
         if "STOCK" in df.columns:
             df["STOCK"] = df["STOCK"].astype(str).str.strip()
         return df
@@ -112,14 +130,38 @@ class SheetConnector:
     def update_data(self, df):
         """
         Actualiza sheet1 con los datos del DataFrame (primera fila = headers).
+        Bloquea si hay FACTOR fuera de [1.00–2.00] o inválido.
         """
         sh = self._open_spreadsheet()
         sheet = sh.sheet1
+
         df_clean = df.copy().where(pd.notnull(df), "")
+
+        # Validación estricta de FACTOR antes de subir
         if "FACTOR" in df_clean.columns:
-            df_clean["FACTOR"] = df_clean["FACTOR"].map(lambda x: f"{float(x):.2f}" if str(x) != "" else "")
+            parsed = df_clean["FACTOR"].apply(parse_factor)
+            invalid_mask = parsed.isna() | (~parsed.apply(is_factor_valid))
+            if invalid_mask.any():
+                bad = df_clean.loc[invalid_mask, ["PRODUCTO", "FACTOR"]].head(20)
+                # Aviso al usuario y no subimos nada
+                st.error(
+                    "No se puede sincronizar con Google Sheets. "
+                    "Hay factores fuera de rango [1.00–2.00] o inválidos:\n"
+                    + "\n".join(f"- {r['PRODUCTO']}: {r['FACTOR']}" for _, r in bad.iterrows())
+                )
+                # Cortamos la operación
+                raise ValueError("FACTORES fuera de rango/invalidos. Corrige antes de sincronizar.")
+
+            # Si todo ok, formateamos a dos decimales para la planilla
+            df_clean["FACTOR"] = parsed.map(lambda x: f"{float(x):.2f}")
+
+        # (Opcional) asegurar formato de precio si usas texto con símbolos
+        # if "PRECIO VENTA" in df_clean.columns:
+        #     df_clean["PRECIO VENTA"] = df_clean["PRECIO VENTA"].apply(lambda v: f"{float(str(v).replace('$','').replace('.','').replace(',','.')):.2f}" if str(v) != "" else "")
+
         data = [df_clean.columns.tolist()] + df_clean.values.tolist()
         _with_retry(sheet.update, 'A1', data)
+
 
     def get_products(self) -> pd.DataFrame:
         sh = self.client.open_by_url(self.spreadsheet_url)

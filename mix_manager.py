@@ -3,7 +3,7 @@
 import streamlit as st
 import pandas as pd
 import sku_generator  # ⬅️ importa el módulo (no solo la función)
-
+from utils_factors import parse_factor, is_factor_valid
 
 
 class MixManager:
@@ -48,12 +48,20 @@ class MixManager:
                 if uc.empty:
                     continue
                 total_cost += float(uc.iloc[0]) * (grams / 1000.0)
-            factor = row.get('FACTOR', self.default_factor) or self.default_factor
-            factor_float = float(factor)           
-            price = round(total_cost * factor_float, 2)
-                
+            raw = row.get('FACTOR', self.default_factor)
+            f = parse_factor(raw)
+            if f is None or not is_factor_valid(f):
+                st.error(
+                    f"[MIX] Factor fuera de rango [1.00–2.00] en '{row.get('PRODUCTO','(sin nombre)')}'. "
+                    "Corrígelo para recalcular el precio."
+                )
+                # No tocamos COSTO/PRECIO VENTA si el factor es inválido
+                continue
+
+            price = round(total_cost * float(f), 2)
             self.df.at[idx, 'COSTO'] = int(round(total_cost))
             self.df.at[idx, 'PRECIO VENTA'] = price
+
 
     def list_mix_categories(self) -> list:
         """Retorna categorías que contienen mixes (columna MIX empieza con 'SI')."""
@@ -140,6 +148,10 @@ class MixManager:
             preview = st.form_submit_button('Previsualizar cambios')
 
         if preview:
+            f = parse_factor(factor_input)
+            if f is None or not is_factor_valid(f):
+                st.error("El factor debe estar en el rango [1.00–2.00]. Corrígelo antes de continuar.")
+                return
             total_g = sum(pesos.values())
             if total_g != 1000.0:
                 st.error(f'Suma de gramos debe ser 1000 g (actual: {total_g:.1f} g)')
@@ -165,14 +177,18 @@ class MixManager:
             st.write(f'Precio venta sugerido: ${precio:,.2f}')
 
             if st.button('Guardar cambios', key='save_edit_mix'):
+                f = parse_factor(factor_input)
+                if f is None or not is_factor_valid(f):
+                    st.error("No se puede guardar: el factor está fuera de [1.00–2.00].")
+                    return
                 mix_str = 'SI|' + ','.join(f'{c}:{pesos[c]}' for c in pesos)
                 idx = self.df[self.df['PRODUCTO'] == sel].index[0]
                 self.df.at[idx, 'CATEGORIA'] = cat
                 self.df.at[idx, 'PRODUCTO'] = f"{base_name} ({' / '.join(comp_sel)})"
                 self.df.at[idx, 'MIX'] = mix_str
-                self.df.at[idx, 'FACTOR'] = factor_input
+                self.df.at[idx, 'FACTOR'] = float(f)
                 self.df.at[idx, 'COSTO'] = round(costo_total, 2)
-                self.df.at[idx, 'PRECIO VENTA'] = precio
+                self.df.at[idx, 'PRECIO VENTA'] = int(round(costo_total * float(f)))
                 st.success('Mix actualizado correctamente')
                 st.subheader('Catálogo de productos actualizado')
                 st.dataframe(self.df.reset_index(drop=True))
@@ -257,6 +273,9 @@ class MixManager:
             total_g = sum(pesos.values())
             if abs(total_g - 1000.0) > 0.01:
                 errores.append(f'La suma de gramos debe ser 1000 g (actual: {total_g:.2f} g).')
+            f = parse_factor(factor_input)
+            if f is None or not is_factor_valid(f):
+                errores.append('El factor debe estar en el rango [1.00–2.00].')
 
             if errores:
                 st.session_state['mix_preview'] = None
@@ -264,12 +283,12 @@ class MixManager:
                     st.error(e)
             else:
                 st.session_state['mix_preview'] = {
-                    'categoria': categoria_final,
-                    'base': base_name.strip(),
-                    'factor': float(factor_input),
-                    'componentes': componentes,
-                    'pesos': pesos
-                }
+                'categoria': categoria_final,
+                'base': base_name.strip(),
+                'factor': float(f),            # usar f validado
+                'componentes': componentes,
+                'pesos': pesos
+            }
 
         # ---- Mostrar preview (si existe)
         if st.session_state['mix_preview']:
@@ -298,6 +317,10 @@ class MixManager:
             # Si se tocó Guardar en este mismo run (save_btn) o en el próximo
             # (volverá a entrar con la preview viva), procedemos a guardar.
             if save_btn:
+                f = parse_factor(prev['factor'])
+                if f is None or not is_factor_valid(f):
+                    st.error("No se puede guardar: el factor está fuera de [1.00–2.00].")
+                    return
                 from sku_generator import generar_sku
 
                 categoria = prev['categoria']
@@ -359,8 +382,8 @@ class MixManager:
                     "KG / UNIDAD": "KG",
                     "FRACCIONAMIENTO": fracc_for_mix,  # <-- clave
                     "COSTO": round(costo_total, 2),
-                    "PRECIO VENTA": precio,
-                    "FACTOR": float(prev['factor']),
+                    "PRECIO VENTA": round(costo_total * float(f), 2),
+                    "FACTOR": float(f),
                     "STOCK": "-",
                     "MARCA": (
                         self.df.loc[self.df['CATEGORIA'] == categoria, 'MARCA'].dropna().astype(str).str.strip().iloc[0]
